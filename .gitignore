@@ -2,3 +2,5 @@ nob
 build
 nob.old
 main
+.cache
+compile_commands.json
