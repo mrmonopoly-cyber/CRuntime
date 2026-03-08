@@ -13,10 +13,9 @@
 #define SRC_DIR "src"
 #define O_FILE "main"
 
-#define PANIC(code) do{int err=(code);fprintf(stderr,"panic err=%d\n",err); return err;}while(0)
-
-static int build_obj(const char* base_src_dir)
+static int _build_obj(const char* base_src_dir)
 {
+  int result=0;
   Cmd cmd = {0};
   Dir_Entry dir_entry = {0};
   char* src_cursor = NULL;
@@ -28,7 +27,12 @@ static int build_obj(const char* base_src_dir)
   (*src_cursor++) = '/';
   base_src_temp_path_length = strlen(src_temp_path);
 
-  if(!dir_entry_open(base_src_dir, &dir_entry)) PANIC(1);
+  if(!dir_entry_open(base_src_dir, &dir_entry))
+  {
+    result =1;
+    goto end;
+  }
+
   while (dir_entry_next(&dir_entry)){
     char* temp_cursor = src_cursor;
     const int dir_name_length = strlen(dir_entry.name);
@@ -52,17 +56,23 @@ static int build_obj(const char* base_src_dir)
     cmd_append(&cmd, "-c");
     cmd_append(&cmd, src_temp_path);
 
-    if (!cmd_run(&cmd, .dont_reset = false)) PANIC(3);
+    if (!cmd_run(&cmd, .dont_reset = false)){
+      result = 3;
+      goto clean_dir;
+    };
   };
 
+clean_dir:
   dir_entry_close(dir_entry);
+clean_cmd: 
   cmd_free(cmd);
-
-  return 0;
+end:
+  return result;
 }
 
-int link_obj(const char* const base_src_dir, const char* o_file)
+static int _link_obj(const char* const base_src_dir, const char* o_file)
 {
+  int result=0;
   Dir_Entry dir_entry = {0};
   Cmd cmd = {0};
 
@@ -70,32 +80,40 @@ int link_obj(const char* const base_src_dir, const char* o_file)
   cmd_append(&cmd, "-Wall");
   cmd_append(&cmd, "-Wextra");
 
-  if(!dir_entry_open(".", &dir_entry)) PANIC(1);
-  while (dir_entry_next(&dir_entry)){
+  if(!dir_entry_open(".", &dir_entry)){
+    result =1;
+    goto clean_cmd;
+  }
+  while (dir_entry_next(&dir_entry))
+  {
     int written = 0;
     const int dir_name_length = strlen(dir_entry.name);
 
-    if (!strncmp(dir_entry.name, "..", dir_name_length) || 
-        !strncmp(dir_entry.name, ".", dir_name_length) ||
-        !strncmp(dir_entry.name, o_file, dir_name_length))
+    if (!strncmp(dir_entry.name, "..", 2) || 
+        !strncmp(dir_entry.name, ".", 1) ||
+        !strncmp(dir_entry.name, o_file, strlen(dir_entry.name)))
     {
+      nob_log(INFO, "skipping %s", dir_entry.name);
       continue;
     }
 
     nob_log(INFO, "working on: %s", dir_entry.name);
     cmd_append(&cmd,dir_entry.name);
-
   };
-  dir_entry_close(dir_entry);
 
   cmd_append(&cmd, "-o");
   cmd_append(&cmd, o_file);
 
-  if (!cmd_run(&cmd, .dont_reset = false)) PANIC(4);
+  if (!cmd_run(&cmd, .dont_reset = false)){
+    result = 4;
+  }
 
+clean_dir:
+  dir_entry_close(dir_entry);
+clean_cmd:
   cmd_free(cmd);
-
-  return 0;
+end:
+  return result;
 }
 
 int main(int argc, char** argv)
@@ -112,20 +130,20 @@ int main(int argc, char** argv)
   src_dir[pwd_length] = '/';
   strncat(src_dir, SRC_DIR, PATH_MAX - sizeof(SRC_DIR));
 
-  if(!mkdir_if_not_exists(BUILD_DIR)) PANIC(1);
-  if(!set_current_dir(BUILD_DIR)) PANIC(2);
+  if(!mkdir_if_not_exists(BUILD_DIR)) return 1;
+  if(!set_current_dir(BUILD_DIR)) return 2;
 
   nob_log(INFO, "src dir: %s\n", src_dir);
-  nob_log(INFO, "build dir: %s,%s\n", root,BUILD_DIR);
+  nob_log(INFO, "build dir: %s/%s\n", root,BUILD_DIR);
 
   nob_log(INFO, "building objs");
-  if((err = build_obj(src_dir))) PANIC(err);
+  if((err = _build_obj(src_dir))) return(err);
   nob_log(INFO, "linking objs");
-  if((err = link_obj(src_dir, O_FILE))) PANIC(err);
+  if((err = _link_obj(src_dir, O_FILE))) return(err);
 
-  if(!set_current_dir(root)) PANIC(2);
+  if(!set_current_dir(root)) return(2);
 
-  if(!copy_file(BUILD_DIR"/"O_FILE, O_FILE)) PANIC(4);
+  if(!copy_file(BUILD_DIR"/"O_FILE, O_FILE)) return(4);
 
 
   return 0;
