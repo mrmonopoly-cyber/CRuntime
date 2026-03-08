@@ -54,6 +54,7 @@ static int _build_obj(const char* base_src_dir)
     cmd_append(&cmd, "-std=c99");
     cmd_append(&cmd, "-pedantic");
     cmd_append(&cmd, "-I../lib/CResult");
+    cmd_append(&cmd, "-I../lib/CVector");
     cmd_append(&cmd, "-c");
     cmd_append(&cmd, src_temp_path);
 
