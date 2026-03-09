@@ -23,7 +23,7 @@
 #include <task_pool/task_pool.h>
 
 typedef struct {
-  CScheduler scheduler;
+  CRScheduler scheduler;
   CTaskPool task_pool;
 }CRuntime;
 

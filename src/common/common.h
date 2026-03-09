@@ -1,6 +1,7 @@
 #pragma once
 
 #include "errors/errors.h"
+#include "process/process.h"
 
 #define UNUSED(X) (void) (X)
 

@@ -12,6 +12,6 @@
 
 typedef struct{
   CTask* task_pool;
-}CScheduler;
+}CRScheduler;
 
-CRRETURN CScheduler_init(CScheduler* const self, CTask* const task_pool);
+CRRETURN CScheduler_init(CRScheduler* const self, CTask* const task_pool);
