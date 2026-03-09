@@ -10,6 +10,7 @@
 
 
 #include <CVector.h>
+#include <CResult.h>
 
 
 #include <errors/errors.h>
@@ -22,6 +23,7 @@ typedef struct {
 }CTask;
 
 typedef C_VECTOR_TEMPLATE(CTask) CTaskVector;
+typedef CRESULT_TEMPLATE(CTask, CRStatus) CTaskRet;
 
 typedef struct{
   CTaskVector task_pool;
@@ -29,3 +31,5 @@ typedef struct{
 
 
 CRRETURN CTask_push(CTaskPool* const self, const CTask task);
+
+CRESULT_RETURN(CTaskVector) CTask_pop(CTaskPool* const self);

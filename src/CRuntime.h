@@ -35,5 +35,4 @@ typedef struct{
 CRRETURN _CRuntime_init(CRuntime* const self, const CRuntimeInitOpt opt);
 #define CRuntime_init(self, ...) _CRuntime_init((self), ((CRuntimeInitOpt) {__VA_ARGS__}))
 
-
-CRRETURN CRuntime_create_task(CRuntime* const self);
+CRRETURN CRuntime_create_task(CRuntime* const self, const CTask task);
