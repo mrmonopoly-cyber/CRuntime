@@ -21,7 +21,7 @@
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199900L
 #define C_VECTOR_TYPE_CHECK(self, x)                                                            \
   do{                                                                                           \
-    __typeof__ (x) ele_1 = (x);                                                                 \
+    __typeof__ (self.data) ele_1 = (x);                                                         \
     C_VECTOR_STATIC_ASSERT(                                                                     \
       __builtin_types_compatible_p(__typeof__(&ele_1), __typeof__(self.data)), invalid_type);   \
   }while(0)

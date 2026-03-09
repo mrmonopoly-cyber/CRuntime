@@ -298,10 +298,10 @@ struct{                                                                         
     const __typeof__((self)) c_self = (self);                                                     \
     if(c_self._ok){                                                                               \
       __typeof__(c_self.value._ok_val) res_val = c_self.value._ok_val;                            \
-      do{(ok_exp);}while(0);                                                                      \
+      do{ok_exp;}while(0);                                                                      \
     }else{                                                                                        \
       __typeof__(c_self.value._err_val) res_val = c_self.value._err_val;                          \
-      do{(err_exp);}while(0);                                                                     \
+      do{err_exp;}while(0);                                                                     \
     }                                                                                             \
   }while(0)
 
@@ -317,7 +317,7 @@ struct{                                                                         
     const __typeof__((self)) c_self = (self);                                                     \
     if(c_self._ok){                                                                               \
       __typeof__(c_self.value._ok_val) ok_val = c_self.value._ok_val;                             \
-      do{(ok_exp);}while(0);                                                                      \
+      do{ok_exp;}while(0);                                                                      \
     }                                                                                             \
   }while(0)
 
