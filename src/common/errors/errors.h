@@ -9,9 +9,7 @@
 #include <CResult.h>
 #include <stdint.h>
 
-#define STATUS_OK 0
-#define STATUS_FAILED_SAVING_NEW_TASK 1
-#define MCSSTATUS_INVALID_PID 2
+#define CR_STATUS_OK 0
 
 typedef struct{
   uint16_t status;
