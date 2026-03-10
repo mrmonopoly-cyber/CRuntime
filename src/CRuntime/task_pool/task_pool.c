@@ -13,11 +13,11 @@ typedef struct{
 }CTaskPool;
 
 
-static void* _task_loop(void* input)
+static int _task_loop(void* input)
 {
   UNUSED(input);
 
-  return NULL;
+  return 0;
 }
 
 CRESULT_RETURN(CTInitRet) CTask_init(void)

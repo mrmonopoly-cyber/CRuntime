@@ -12,7 +12,7 @@
 
 #include <stddef.h>
 
-typedef void* (*process_fun)(void*);
+typedef int (*process_fun)(void*);
 
 typedef int32_t CRPid;
 typedef CRESULT_TEMPLATE(CRPid, CRStatus) CRSpawnReturn;

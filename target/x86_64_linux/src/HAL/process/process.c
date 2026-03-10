@@ -20,7 +20,7 @@ CRESULT_RETURN(CRSpawnReturn) CRProcess_spawn(const CRProcess proc)
 
   if (!pid) //INFO: child
   {
-    proc.proc_fun(proc.input);
+    exit(proc.proc_fun(proc.input));
   }
 
   return PROC_OK(pid);
