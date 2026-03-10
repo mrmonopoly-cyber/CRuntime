@@ -1,6 +1,6 @@
 #include "task_pool.h"
-#include "CResult.h"
-#include "CVector.h"
+
+#include <CResult.h>
 
 #include <CRuntime/common/common.h>
 #include <CRuntime/common/HAL/process.h>
@@ -8,9 +8,8 @@
 #define TPI_ERR(...) CRESULT_T_ERR(CTInitRet, ((CRStatus){__VA_ARGS__}))
 #define TPI_OK(pid) CRESULT_T_OK(CTInitRet, (pid))
 
-typedef C_VECTOR_TEMPLATE(CTask) CTaskVector;
 typedef struct{
-  CTaskVector task_pool;
+  CTask task_pool[TASK_POOL_MAX_CAPACITY];
 }CTaskPool;
 
 

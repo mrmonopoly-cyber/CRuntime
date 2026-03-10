@@ -15,7 +15,6 @@
 #include <stdint.h>
 
 #include <CResult.h>
-#include <CVector.h>
 
 #include <CRuntime/common/common.h>
 #include <CRuntime/common/HAL/process.h>

@@ -8,13 +8,13 @@
 
 #include <stddef.h>
 
-#include <CVector.h>
 #include <CResult.h>
 
 #include <CRuntime/common/common.h>
 
-typedef void (*taskAction)(void*) ;
+#define TASK_POOL_MAX_CAPACITY 128
 
+typedef void (*taskAction)(void*) ;
 typedef struct {
   taskAction action;
   void* task_input;
