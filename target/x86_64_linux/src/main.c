@@ -1,9 +1,11 @@
 #include <stdio.h>
-#include "CRuntime.h"
+#include <CRuntime/CRuntime.h>
 
 int main(void)
 {
   CRuntime runtime = {0};
+
+  printf("CRuntime started\n");
 
   CRESULT_ERR_MATCH(CRuntime_init(&runtime, INIT_DEFAULT),
       err,{
@@ -11,6 +13,8 @@ int main(void)
         return 1;
       }
   );
+
+  printf("CRuntime ended\n");
 
   return 0;
 }

@@ -11,6 +11,8 @@
 
 #define BUILD_DIR "build"
 #define SRC_DIR "src"
+#define LIB_DIR "lib"
+#define ROOT_SRC_DIR "../.."
 #define O_FILE "main"
 
 const char* root = NULL;
@@ -29,13 +31,13 @@ static bool _compile_files(Walk_Entry entry)
     cmd_append(&cmd, "-Wextra");
     cmd_append(&cmd, "-std=c99");
     cmd_append(&cmd, "-pedantic");
-    cmd_append(&cmd, "-I../lib/CResult");
-    cmd_append(&cmd, "-I../lib/CVector");
-    cmd_append(&cmd, "-I../src");
+    cmd_append(&cmd, "-I../"ROOT_SRC_DIR"/"SRC_DIR);
+    cmd_append(&cmd, "-I../"ROOT_SRC_DIR"/"LIB_DIR"/CResult");
+    cmd_append(&cmd, "-I../"ROOT_SRC_DIR"/"LIB_DIR"/CVector");
     cmd_append(&cmd, "-c");
     cmd_append(&cmd, entry.path);
 
-    if (!cmd_run(&cmd, .dont_reset = false)) nob_return_defer(false);
+    if (!cmd_run(&cmd, .dont_reset = false)) return_defer(false);
     result = true;
   }
   else
@@ -129,26 +131,32 @@ int main(int argc, char** argv)
   int err =0;
 
   char src_dir[PATH_MAX] = {0};
+  char root_src_dir[PATH_MAX] = {0};
+  char lib_dir[PATH_MAX] = {0};
   char build_dir[PATH_MAX] = {0};
 
   root = get_current_dir_temp();
-  const int pwd_length = strlen(root);
 
-  strncat(src_dir, root, pwd_length);
-  src_dir[pwd_length] = '/';
-  strncat(src_dir, SRC_DIR, PATH_MAX - sizeof(SRC_DIR));
-
-  strncat(build_dir, root, pwd_length);
-  build_dir[pwd_length] = '/';
-  strncat(build_dir, BUILD_DIR, PATH_MAX - sizeof(BUILD_DIR));
+  snprintf(src_dir, PATH_MAX, "%s/%s", root, SRC_DIR);
+  snprintf(build_dir, PATH_MAX, "%s/%s", root, BUILD_DIR);
+  snprintf(root_src_dir, PATH_MAX, "%s/%s/%s", root, ROOT_SRC_DIR, SRC_DIR);
+  snprintf(lib_dir, PATH_MAX, "%s/%s/%s", root, ROOT_SRC_DIR, LIB_DIR);
 
   if(!mkdir_if_not_exists(BUILD_DIR)) return 1;
   if(!set_current_dir(BUILD_DIR)) return 2;
 
   nob_log(INFO, "src dir: %s", src_dir);
+  nob_log(INFO, "lib dir: %s", lib_dir);
+  nob_log(INFO, "root_src dir: %s", root_src_dir);
   nob_log(INFO, "build dir: %s", build_dir);
 
-  nob_log(INFO, "building objs");
+  nob_log(INFO, "building root_src objs");
+  if(!walk_dir(root_src_dir,_compile_files,0)) return err;;
+
+  nob_log(INFO, "building lib objs");
+  if(!walk_dir(lib_dir,_compile_files,0)) return err;;
+
+  nob_log(INFO, "building src objs");
   if(!walk_dir(src_dir,_compile_files,0)) return err;;
 
   nob_log(INFO, "linking objs");

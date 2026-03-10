@@ -1,6 +1,5 @@
-#include "process.h"
+#include <CRuntime/common/common.h>
 #include <CResult.h>
-#include <CRuntime/common/errors/errors.h>
 
 #define PROC_OK(pid) CRESULT_T_OK(CRSpawnReturn, (pid))
 #define PROC_ERR(...) CRESULT_T_ERR(CRSpawnReturn, ((CRStatus){__VA_ARGS__}))
@@ -9,7 +8,7 @@
 
 #include <unistd.h>
 
-CRESULT_RETURN(CRSpawnReturn) create_process(const CRProcess proc)
+CRESULT_RETURN(CRSpawnReturn) CRProcess_spawn(const CRProcess proc)
 {
   CRPid pid = fork();
   if (pid<0) return PROC_ERR(
@@ -29,3 +28,4 @@ CRESULT_RETURN(CRSpawnReturn) create_process(const CRProcess proc)
 #error "platform not supported yet"
 
 #endif /* if defined (__linux__) || defined () */
+

@@ -1,5 +1,7 @@
-build
-nob.old
+nob
+nob
 main
-.cache
+build
+nob
+nob.old
 compile_commands.json
