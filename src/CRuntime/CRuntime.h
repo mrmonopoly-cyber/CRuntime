@@ -18,13 +18,12 @@
 #include <CVector.h>
 
 #include <CRuntime/common/common.h>
+#include <CRuntime/common/HAL/process.h>
 
-#include "scheduler/scheduler.h"
 #include "task_pool/task_pool.h"
 
 typedef struct {
-  CRScheduler scheduler;
-  CTaskPool task_pool;
+  CRPid task_pool_pid;
 }CRuntime;
 
 typedef struct{
@@ -36,3 +35,5 @@ CRRETURN _CRuntime_init(CRuntime* const self, const CRuntimeInitOpt opt);
 #define CRuntime_init(self, ...) _CRuntime_init((self), ((CRuntimeInitOpt) {__VA_ARGS__}))
 
 CRRETURN CRuntime_create_task(CRuntime* const self, const CTask task);
+
+CRRETURN CRuntime_terminate(CRuntime* const self);

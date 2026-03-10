@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <CRuntime/CRuntime.h>
+#include <unistd.h>
 
 int main(void)
 {
@@ -9,7 +10,16 @@ int main(void)
 
   CRESULT_ERR_MATCH(CRuntime_init(&runtime, INIT_DEFAULT),
       err,{
-        printf("error in init of runtime: %s\n", err.description);
+        printf("error init CRuntime: %s\n", err.description);
+        return 1;
+      }
+  );
+
+  sleep(4);
+
+  CRESULT_ERR_MATCH(CRuntime_terminate(&runtime),
+      err,{
+        printf("error terminate CRuntime: %s\n", err.description);
         return 1;
       }
   );

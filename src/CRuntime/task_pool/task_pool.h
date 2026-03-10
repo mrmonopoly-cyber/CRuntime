@@ -8,12 +8,10 @@
 
 #include <stddef.h>
 
-
 #include <CVector.h>
 #include <CResult.h>
 
-
-#include <CRuntime/common/errors/errors.h>
+#include <CRuntime/common/common.h>
 
 typedef void (*taskAction)(void*) ;
 
@@ -22,14 +20,6 @@ typedef struct {
   void* task_input;
 }CTask;
 
-typedef C_VECTOR_TEMPLATE(CTask) CTaskVector;
-typedef CRESULT_TEMPLATE(CTask, CRStatus) CTaskRet;
+typedef CRESULT_TEMPLATE(CRPid, CRStatus) CTInitRet;
 
-typedef struct{
-  CTaskVector task_pool;
-}CTaskPool;
-
-
-CRRETURN CTask_push(CTaskPool* const self, const CTask task);
-
-CRESULT_RETURN(CTaskVector) CTask_pop(CTaskPool* const self);
+CRESULT_RETURN(CTInitRet) CTask_init(void);

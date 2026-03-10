@@ -22,3 +22,7 @@ typedef struct{
 }CRProcess;
 
 CRESULT_RETURN(CRSpawnReturn) CRProcess_spawn(const CRProcess self);
+
+CRRETURN CRProcess_terminate(const CRPid pid);
+
+void CRProcess_exit(const int exit_val, const char* msg);

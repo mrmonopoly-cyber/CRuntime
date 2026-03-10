@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 #define CR_STATUS_OK 0
-#define CR_STATUS_ERR_PROCESS_SPAWN 1
+#define CR_STATUS_ERR_PROCESS 1
 
 typedef struct{
   uint16_t status;
