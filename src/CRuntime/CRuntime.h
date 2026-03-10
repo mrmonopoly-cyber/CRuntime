@@ -17,10 +17,10 @@
 #include <CResult.h>
 #include <CVector.h>
 
-#include "common.h"
+#include <CRuntime/common/common.h>
 
-#include <scheduler/scheduler.h>
-#include <task_pool/task_pool.h>
+#include "scheduler/scheduler.h"
+#include "task_pool/task_pool.h"
 
 typedef struct {
   CRScheduler scheduler;

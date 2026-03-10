@@ -31,7 +31,6 @@ static bool _compile_files(Walk_Entry entry)
     cmd_append(&cmd, "-pedantic");
     cmd_append(&cmd, "-I../lib/CResult");
     cmd_append(&cmd, "-I../lib/CVector");
-    cmd_append(&cmd, "-I../src/common");
     cmd_append(&cmd, "-I../src");
     cmd_append(&cmd, "-c");
     cmd_append(&cmd, entry.path);

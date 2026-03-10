@@ -6,9 +6,9 @@
  * Fetch a task from the task pool and executes it until the task ends or it receive a signal
  */
 
-#include <errors/errors.h>
+#include <CRuntime/common/errors/errors.h>
 
-#include <task_pool/task_pool.h>
+#include <CRuntime/task_pool/task_pool.h>
 
 typedef struct{
   CTask* task_pool;

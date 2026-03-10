@@ -1,6 +1,6 @@
 #pragma once
 
-#include <errors/errors.h>
+#include <CRuntime/common/errors/errors.h>
 #include <CResult.h>
 
 #include <stddef.h>

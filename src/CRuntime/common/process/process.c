@@ -1,6 +1,6 @@
 #include "process.h"
-#include "CResult.h"
-#include "errors/errors.h"
+#include <CResult.h>
+#include <CRuntime/common/errors/errors.h>
 
 #define PROC_OK(pid) CRESULT_T_OK(CRSpawnReturn, (pid))
 #define PROC_ERR(...) CRESULT_T_ERR(CRSpawnReturn, ((CRStatus){__VA_ARGS__}))
