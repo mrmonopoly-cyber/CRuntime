@@ -33,7 +33,7 @@ static bool _compile_files(Walk_Entry entry)
     cmd_append(&cmd, "cc");
     cmd_append(&cmd, "-Wall");
     cmd_append(&cmd, "-Wextra");
-    cmd_append(&cmd, "-std=c99");
+    cmd_append(&cmd, "-std=c11");
     cmd_append(&cmd, "-pedantic");
     cmd_append(&cmd, "-I../"ROOT_SRC_DIR"/"SRC_DIR);
     cmd_append(&cmd, "-I../"ROOT_SRC_DIR"/"LIB_DIR"/CResult");

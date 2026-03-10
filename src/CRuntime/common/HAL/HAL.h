@@ -9,3 +9,4 @@
 
 
 #include "process.h"
+#include "channel.h"
