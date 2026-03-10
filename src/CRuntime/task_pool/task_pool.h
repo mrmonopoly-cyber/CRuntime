@@ -12,7 +12,9 @@
 
 #include <CRuntime/common/common.h>
 
+#ifndef TASK_POOL_MAX_CAPACITY
 #define TASK_POOL_MAX_CAPACITY 128
+#endif // !TASK_POOL_MAX_CAPACITY
 
 typedef void (*taskAction)(void*) ;
 typedef struct {
