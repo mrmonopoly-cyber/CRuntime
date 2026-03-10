@@ -1,9 +1,10 @@
 #include "CRuntime.h"
-#include "CResult.h"
-#include "CRuntime/common/HAL/process.h"
-#include "CRuntime/task_pool/task_pool.h"
-#include "common/common.h"
-#include "common/errors/errors.h"
+
+#include <CResult.h>
+#include <CRuntime/common/HAL/process.h>
+#include <CRuntime/task_pool/task_pool.h>
+#include <CRuntime/common/common.h>
+#include <CRuntime/common/errors/errors.h>
 #include <assert.h>
 
 CRRETURN _CRuntime_init(CRuntime* const self, const CRuntimeInitOpt opt)
