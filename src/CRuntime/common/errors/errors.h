@@ -14,6 +14,7 @@
 #define CR_STATUS_ERR_EMPTY_STACK 2
 #define CR_STATUS_ERR_STACK 3
 #define CR_STATUS_ERR_QTASK_EMPTY 4
+#define CR_STATUS_ERR_QTASK_FULL 4
 
 typedef struct{
   uint16_t status;

@@ -42,16 +42,17 @@ CRReturn _CTP_add_task(CTP* const restrict self, CTask* task)
     {
       self->index_bitmap[cell] |= remainder;
       self->task_pool[i] = context;
-      break;
+      return OK();
     }
   }
 
-  return OK();
+  return ERR(CR_STATUS_ERR_QTASK_FULL,"full task queue, unable to save the task");
+
 }
 
+#define ERR_CTPPORES(...)CRESULT_T_ERR(CTPPopRes, ((CRStatus){__VA_ARGS__}))
 CRESULT_RETURN(CTPPopRes) CTP_next(CTP* const restrict self)
 {
-#define ERR_CTPPORES(...)CRESULT_T_ERR(CTPPopRes, ((CRStatus){__VA_ARGS__}))
   const size_t size_index = sizeof(self->index_bitmap[0])*8;
 
   //TODO: more efficient
@@ -67,10 +68,6 @@ CRESULT_RETURN(CTPPopRes) CTP_next(CTP* const restrict self)
     }
   }
   
-  return ERR_CTPPORES(
-      .status=CR_STATUS_ERR_QTASK_EMPTY,
-      .description = "empty task queue, nothing to do"
-      );
-
-#undef ERR_CTPPORES
+  return ERR_CTPPORES(CR_STATUS_ERR_QTASK_EMPTY,"empty task queue, nothing to do");
 }
+#undef ERR_CTPPORES
