@@ -57,7 +57,7 @@ _CRuntime_schedule_next(CRuntime* const restrict self)
   {
     CRESULT_FULL_MATCH(CTP_next(&self->task_pool),
       task,{
-        Context_switch(&self->runtime_context, &task);
+        Context_switch(&self->runtime_context, task);
       },
       {
         if(task.status != CR_STATUS_ERR_QTASK_EMPTY)

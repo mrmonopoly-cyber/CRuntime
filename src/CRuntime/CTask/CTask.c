@@ -64,7 +64,7 @@ CRESULT_RETURN(CTPPopRes) CTP_next(CTP* const restrict self)
     if ((self->index_bitmap[cell] & remainder))
     {
       self->index_bitmap[cell] ^= remainder;
-      return CRESULT_T_OK(CTPPopRes, self->task_pool[i]);
+      return CRESULT_T_OK(CTPPopRes, &self->task_pool[i]);
     }
   }
   
