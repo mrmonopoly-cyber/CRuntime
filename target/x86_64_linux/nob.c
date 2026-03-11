@@ -17,9 +17,11 @@
 
 const char* root = NULL;
 
-bool verbose = false;
+bool nob_verbose = false;
+bool comp_verbose = false;
 
-#define VERBOSE_ACTION if(verbose)
+#define NOB_VERBOSE if(nob_verbose)
+#define COMP_VERBOSE if(comp_verbose)
 
 static bool _compile_files(Walk_Entry entry)
 {
@@ -28,7 +30,7 @@ static bool _compile_files(Walk_Entry entry)
 
   if (entry.type == NOB_FILE_REGULAR && strncmp(entry.path + strlen(entry.path)-2, ".h", 2))
   {
-    VERBOSE_ACTION nob_log(INFO, "compiling: working on %s",entry.path);
+    NOB_VERBOSE nob_log(INFO, "compiling: working on %s",entry.path);
 
     cmd_append(&cmd, "cc");
     cmd_append(&cmd, "-Wall");
@@ -38,6 +40,7 @@ static bool _compile_files(Walk_Entry entry)
     cmd_append(&cmd, "-I../"ROOT_SRC_DIR"/"SRC_DIR);
     cmd_append(&cmd, "-I../"ROOT_SRC_DIR"/"LIB_DIR"/CResult");
     cmd_append(&cmd, "-DCR_CONTEXT_SIZE=128");
+    COMP_VERBOSE cmd_append(&cmd, "-DVERBOSE");
     cmd_append(&cmd, "-c");
     cmd_append(&cmd, entry.path);
 
@@ -46,7 +49,7 @@ static bool _compile_files(Walk_Entry entry)
   }
   else
   {
-    VERBOSE_ACTION nob_log(INFO, "skipping %s",entry.path);
+    NOB_VERBOSE nob_log(INFO, "skipping %s",entry.path);
   }
 
 defer:
@@ -111,7 +114,7 @@ static int _link_obj(const char* build_dir, const char* o_file)
 
   for(char* cursor=strtok(input.buffer, " ");cursor;cursor = strtok(NULL, " "))
   {
-    VERBOSE_ACTION nob_log(INFO, "file to link: %s", cursor);
+    NOB_VERBOSE nob_log(INFO, "file to link: %s", cursor);
     cmd_append(&cmd, cursor);
   }
 
@@ -131,16 +134,20 @@ defer:
 
 static void _parse_input(int argc, char** argv)
 {
-#define CHECK_ARG(input, arg) !strncmp(input[i], (arg), strlen((arg)))
+#define CHECK_ARG(input, arg) !strncmp(input[i], (arg), strlen((input[i])))
 
   for (int i=0; i<argc; i++) {
-    if (CHECK_ARG(argv, "-v") || CHECK_ARG(argv, "--verbose")) {
-      verbose = true;
+    if (CHECK_ARG(argv, "-vn") || CHECK_ARG(argv, "--nob_verbose")) {
+      nob_verbose = true;
+    }
+    if (CHECK_ARG(argv, "-vc") || CHECK_ARG(argv, "--comp_verbose")) {
+      comp_verbose= true;
     }
     if (CHECK_ARG(argv, "-h") || CHECK_ARG(argv, "--help")) {
       printf("usage ./nob <options>\n");
-      printf("\t\t-v, --verbose\tverbose log\n");
-      printf("\t\t-g, --help\tprint this help\n");
+      printf("\t\t-vn, --nob_verbose\tnob verbose log\n");
+      printf("\t\t-vc, --comp_verbose\tcompilation verbose log\n");
+      printf("\t\t-h, --help\t\tprint this help\n");
       exit(0);
     }
   }
@@ -170,21 +177,21 @@ int main(int argc, char** argv)
   if(!mkdir_if_not_exists(BUILD_DIR)) return 1;
   if(!set_current_dir(BUILD_DIR)) return 2;
 
-  VERBOSE_ACTION nob_log(INFO, "src dir: %s", src_dir);
-  VERBOSE_ACTION nob_log(INFO, "lib dir: %s", lib_dir);
-  VERBOSE_ACTION nob_log(INFO, "root_src dir: %s", root_src_dir);
-  VERBOSE_ACTION nob_log(INFO, "build dir: %s", build_dir);
+  NOB_VERBOSE nob_log(INFO, "src dir: %s", src_dir);
+  NOB_VERBOSE nob_log(INFO, "lib dir: %s", lib_dir);
+  NOB_VERBOSE nob_log(INFO, "root_src dir: %s", root_src_dir);
+  NOB_VERBOSE nob_log(INFO, "build dir: %s", build_dir);
 
-  VERBOSE_ACTION nob_log(INFO, "building root_src objs");
+  NOB_VERBOSE nob_log(INFO, "building root_src objs");
   if(!walk_dir(root_src_dir,_compile_files,0)) return err;;
 
-  VERBOSE_ACTION nob_log(INFO, "building lib objs");
+  NOB_VERBOSE nob_log(INFO, "building lib objs");
   if(!walk_dir(lib_dir,_compile_files,0)) return err;;
 
-  VERBOSE_ACTION nob_log(INFO, "building src objs");
+  NOB_VERBOSE nob_log(INFO, "building src objs");
   if(!walk_dir(src_dir,_compile_files,0)) return err;;
 
-  VERBOSE_ACTION nob_log(INFO, "linking objs");
+  NOB_VERBOSE nob_log(INFO, "linking objs");
   if((err = _link_obj(build_dir, O_FILE))) return(err);
 
   if(!set_current_dir(root)) return(2);
