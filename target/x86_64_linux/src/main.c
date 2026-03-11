@@ -1,7 +1,7 @@
-#include "CRuntime/common/HAL/context.h"
 #include <stdio.h>
-#include <CRuntime/CRuntime.h>
 #include <unistd.h>
+
+#include <CRuntime/CRuntime.h>
 
 char scheduler_stack[1024];
 
