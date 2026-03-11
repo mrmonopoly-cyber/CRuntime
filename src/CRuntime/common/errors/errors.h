@@ -23,3 +23,4 @@ typedef CRESULT_TEMPLATE(bool, CRStatus) CRReturn;
 
 #define OK() CRESULT_T_OK(CRReturn, 0)
 #define ERR(...) CRESULT_T_ERR(CRReturn, ((CRStatus){__VA_ARGS__}))
+#define TRY(res) do{ if(CRESULT_IS_ERR((res))) return res; }while(0)

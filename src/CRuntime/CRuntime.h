@@ -16,23 +16,24 @@
 
 #include <CResult.h>
 
+#include <CRuntime/common/HAL/context.h>
 #include <CRuntime/common/common.h>
-#include <CRuntime/common/HAL/process.h>
-
-#include "task_pool/task_pool.h"
+#include <CRuntime/CTask/CTask.h>
 
 typedef struct {
-  CRPid task_pool_pid;
+  CTP task_pool;
+  Context runtime_context;
 }CRuntime;
 
-typedef struct{
-  size_t memory; //INFO: in Bytes
-  size_t queue_size;
-}CRuntimeInitOpt;
+CRRETURN
+CRuntime_init(CRuntime* const restrict self, const CRStack stack);
 
-CRRETURN _CRuntime_init(CRuntime* const self, const CRuntimeInitOpt opt);
-#define CRuntime_init(self, ...) _CRuntime_init((self), ((CRuntimeInitOpt) {__VA_ARGS__}))
+CRRETURN
+CRuntime_add_task(CRuntime* const restrict self,
+    const taskAction entry, void* input, const CRStack stack);
 
-CRRETURN CRuntime_create_task(CRuntime* const self, const CTask task);
+CRRETURN
+CRuntime_start_sync(CRuntime* const restrict self);
 
-CRRETURN CRuntime_terminate(CRuntime* const self);
+CRRETURN
+CRuntime_terminate(CRuntime* const restrict self);
