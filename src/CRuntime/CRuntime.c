@@ -1,12 +1,13 @@
 #include "CRuntime.h"
 
 #include <CResult.h>
+#include <assert.h>
 
 #include <CRuntime/CTask/CTask.h>
+#include <CRuntime/common/HAL/stack.h>
 #include <CRuntime/common/HAL/context.h>
 #include <CRuntime/common/common.h>
 #include <CRuntime/common/errors/errors.h>
-#include <assert.h>
 
 typedef struct{
   Context* task_context;
@@ -46,7 +47,7 @@ _CRuntime_schedule_next(CRuntime* const restrict self)
   };
 
   CRESULT_ERR_MATCH(Context_init(&idle_task,
-        _CRuntime_task_wrapper, &in, idle_stack, sizeof(idle_stack)),
+        _CRuntime_task_wrapper, &in, CRStackInit(idle_stack, sizeof(idle_stack))),
       err,{
         UNUSED(err);
         while(1) TODO("context init failed"); //FIXME: better error handling
@@ -54,12 +55,14 @@ _CRuntime_schedule_next(CRuntime* const restrict self)
 
   while(1)
   {
-    CRESULT_OK_MATCH(CTP_next(&self->task_pool),
+    CRESULT_FULL_MATCH(CTP_next(&self->task_pool),
       task,{
-        if(task){
-          Context_switch(&self->runtime_context, task);
-        }else{
-          Context_switch(&self->runtime_context, &idle_task);
+        Context_switch(&self->runtime_context, &task);
+      },
+      {
+        if(task.status != CR_STATUS_ERR_QTASK_EMPTY)
+        {
+          //TODO: manage errros
         }
       }
     );
@@ -84,8 +87,7 @@ CRuntime_init(CRuntime* const restrict self, const CRStack stack)
       &self->runtime_context,
       _CRuntime_trampoline,
       self,
-      stack.stack_buf,
-      stack.stack_size));
+      stack));
 
   TRY(CTP_init(&self->task_pool));
 
