@@ -124,7 +124,7 @@ CRRETURN
 CRuntime_start_sync(CRuntime* const restrict self)
 {
   Context_switch(NULL, &self->runtime_context);
-  return OK();
+  return ERR(CR_STATUS_ERR_UNREACHABLE_CODE, "CRuntime_start_sync terminated, should not happen");
 }
 
 CRRETURN

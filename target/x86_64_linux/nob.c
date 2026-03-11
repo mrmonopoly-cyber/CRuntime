@@ -40,6 +40,7 @@ static bool _compile_files(Walk_Entry entry)
     cmd_append(&cmd, "-I../"ROOT_SRC_DIR"/"SRC_DIR);
     cmd_append(&cmd, "-I../"ROOT_SRC_DIR"/"LIB_DIR"/CResult");
     cmd_append(&cmd, "-DCR_CONTEXT_SIZE=128");
+    cmd_append(&cmd, "-DCR_CONTEXT_ALIGNEMENT=16");
     COMP_VERBOSE cmd_append(&cmd, "-DVERBOSE");
     cmd_append(&cmd, "-c");
     cmd_append(&cmd, entry.path);

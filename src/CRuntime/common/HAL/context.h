@@ -12,6 +12,7 @@
 
 #include <stddef.h>
 
+#include <CRuntime/common/common.h>
 #include <CRuntime/common/HAL/stack.h>
 #include <CRuntime/common/errors/errors.h>
 
@@ -19,10 +20,16 @@
 #error "context size has not been defined, to define it define CR_CONTEXT_SIZE globally using -DCR_CONTEXT_SIZE=[context size]"
 #endif // !CR_CONTEXT_SIZE
 
+#ifndef CR_CONTEXT_ALIGNEMENT
+#error "context alignement has not been defined, to define it define CR_CONTEXT_ALIGNEMENT globally using -DCR_CONTEXT_ALIGNEMENT=[context size]"
+#endif // !CR_CONTEXT_ALIGNEMENT
+
 typedef int (*taskAction)(void* input);
+
 typedef struct __Context{
   char data[CR_CONTEXT_SIZE];
-}Context;
+}__attribute__((aligned(CR_CONTEXT_ALIGNEMENT))) Context;
+// }ALIGNED_(CR_CONTEXT_ALIGNEMENT) Context; //FIX: why the fucking macro causes compilation error????
 
 CRRETURN Context_init(Context* const restrict cs,
     taskAction entry,

@@ -45,6 +45,6 @@ CRESULT_RETURN(CRSPushRes) CRStack_push(CRStack* const restrict self, const CRSD
  * \brief pop some data from an already initialized stack
  * \important if no data is available o_out remain unmodified and the error CR_STATUS_ERR_EMPTY_STACK is returned with a proper description
  * @param o_out output data buffer
- * @return return a CResult type. see /ref CRReturn for more info
+ * @return return a CResult type. see \ref CRReturn for more info
  */
 CRRETURN CRStack_pop(CRStack* const restrict self, const CRSDataBuffer *o_out);

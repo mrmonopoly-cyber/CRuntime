@@ -17,7 +17,13 @@ int main(void)
       }
   );
 
-  sleep(4);
+
+  CRESULT_ERR_MATCH(CRuntime_start_sync(&runtime),
+      err,{
+        printf("error start CRuntime: %s\n", err.description);
+        return 1;
+      }
+  );
 
   CRESULT_ERR_MATCH(CRuntime_terminate(&runtime),
       err,{

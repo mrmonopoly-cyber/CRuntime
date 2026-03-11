@@ -12,6 +12,7 @@
 #define WARNING(msg)
 #endif // defined(VERBOSE)
 
+#define ALIGNED_(X) __attribute__ ((aligned(X)))
 
 #define UNUSED(X) (void) (X)
 #define INIT_DEFAULT {0}
