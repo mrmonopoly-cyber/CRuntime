@@ -82,7 +82,7 @@ CRRETURN _ChannelRead_read(
  * Read a message from an, already initialized, ChannelRead endpoint
  * @param self read channel endpoint to use
  * @param o_msg message in which the data will be stored
- * @return return a CResult type. see errors.h for more info
+ * @return return a CResult type. see \ref CRReturn for more info
  */
 #define ChannelRead_read(self, o_msg) \
   _ChannelRead_read((self), &(o_msg), sizeof((o_msg)))
@@ -96,7 +96,7 @@ CRRETURN _ChannelWrite_write(
  * Write a message into an, already initialized, ChannelWrite endpoint
  * @param self write channel endpoint to use
  * @param msg message to send. It must be an lvalue object.
- * @return return a CResult type. see errors.h for more info
+ * @return return a CResult type. see \ref CRReturn for more info
  */
 #define ChannelWrite_write(self, msg) \
   _ChannelWrite_write((self), &(msg), sizeof((msg)))
@@ -104,19 +104,19 @@ CRRETURN _ChannelWrite_write(
 /**
  * Close and ChannelRead endpoint.
  * Inform the Channel to decrease the number of reader by 1.
- * @return: return a CResult type. see errors.h for more info
+ * @return: return a CResult type. see \ref CRReturn for more info
  */
 CRRETURN ChannelRead_close(ChannelRead* const restrict self);
 
 /**
  * Close and ChannelWrite endpoint.
  * Inform the Channel to decrease the number of writer by 1.
- * @return: return a CResult type. see errors.h for more info
+ * @return: return a CResult type. see \ref CRReturn for more info
  */
 CRRETURN ChannelWrite_close(ChannelWrite* const restrict self);
 
 /**
  * Close the channel if no readers or writers are currently attached.
- * @return: return a CResult type. see errors.h for more info
+ * @return: return a CResult type. see \ref CRReturn for more info
  */
 CRRETURN Channel_close(Channel* const restrict self);

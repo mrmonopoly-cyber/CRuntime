@@ -27,15 +27,15 @@ typedef struct{
 
 /**
  * \brief initialize a stack using an already allocated buffer
- * @input STACK address in memory of the buffer
- * @input SIZE size in byte of the allocated buffer
+ * @param STACK address in memory of the buffer
+ * @param SIZE size in byte of the allocated buffer
  */
 #define CRStackInit(STACK,SIZE) ((CRStack){.buf=(STACK), .size=(SIZE)})
 
 typedef CRESULT_TEMPLATE(void*, CRStatus) CRSPushRes;
 /**
  * \brief push some data into an already initialized stack
- * @input input input data to push
+ * @param input input data to push
  * @return Result ok address to first element in the stack, 
  * @return Result err CRStatus with CR_STATUS_ERR_STACK
  */
@@ -44,7 +44,7 @@ CRESULT_RETURN(CRSPushRes) CRStack_push(CRStack* const restrict self, const CRSD
 /**
  * \brief pop some data from an already initialized stack
  * \important if no data is available o_out remain unmodified and the error CR_STATUS_ERR_EMPTY_STACK is returned with a proper description
- * @input o_out output data buffer
- * @return return a CResult type. see errors.h for more info
+ * @param o_out output data buffer
+ * @return return a CResult type. see /ref CRReturn for more info
  */
 CRRETURN CRStack_pop(CRStack* const restrict self, const CRSDataBuffer *o_out);
