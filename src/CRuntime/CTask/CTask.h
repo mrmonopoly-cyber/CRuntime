@@ -19,16 +19,6 @@
 #include <CRuntime/common/errors/errors.h>
 #include <CRuntime/common/common.h>
 
-#define CTaskTemplate(T_INPUT, MAX_NUM)                                                           \
-  struct{                                                                                         \
-    CRStack stack;                                                                                \
-    const taskAction entry;                                                                       \
-    const size_t input_size;                                                                      \
-    T_INPUT input[MAX_NUM];                                                                       \
-  }
-
-typedef CTaskTemplate(char, ) CTask;
-
 /**
  * \brief define max amount of task in the queue at the same time
  */
@@ -36,6 +26,11 @@ typedef CTaskTemplate(char, ) CTask;
 #define TASK_POOL_MAX_CAPACITY 128
 WARNING("using default TASK_POOL_MAX_CAPACITY")
 #endif // !TASK_POOL_MAX_CAPACITY
+
+typedef struct{
+  StackView stack;
+  const TaskAction action;
+}CTask;
 
 typedef struct CTaskPool{
   Context task_pool[TASK_POOL_MAX_CAPACITY];
@@ -55,12 +50,12 @@ CRReturn CTP_init(CTP* const restrict self);
  * \brief ser \ref CTaskTemplate
  *
  * @param self pointer to an initialized task pool
- * @param task pointer to a specialized CTask instance
+ * @param task to a CTask instance
  *
  * @return return a CResult type. see \ref CRReturn for more info
  */
-#define CTP_add_task(self, task) _CTP_add_task((self), (CTask*) (task));
-CRReturn _CTP_add_task(CTP* const restrict self, CTask* task);
+#define CTP_add_task(self, ...) _CTP_add_task((self), ((CTask){__VA_ARGS__}))
+CRReturn _CTP_add_task(CTP* const restrict self, CTask task);
 
 /**
  * \brief get a pointer to the next task's context to execute. 

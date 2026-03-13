@@ -19,9 +19,11 @@ const char* root = NULL;
 
 bool nob_verbose = false;
 bool comp_verbose = false;
+bool comp_debug_mode = false;
 
 #define NOB_VERBOSE if(nob_verbose)
 #define COMP_VERBOSE if(comp_verbose)
+#define DEBUG_MODE if(comp_debug_mode)
 
 static bool _compile_files(Walk_Entry entry)
 {
@@ -39,9 +41,11 @@ static bool _compile_files(Walk_Entry entry)
     cmd_append(&cmd, "-pedantic");
     cmd_append(&cmd, "-I../"ROOT_SRC_DIR"/"SRC_DIR);
     cmd_append(&cmd, "-I../"ROOT_SRC_DIR"/"LIB_DIR"/CResult");
-    cmd_append(&cmd, "-DCR_CONTEXT_SIZE=128");
+    cmd_append(&cmd, "-DCR_CONTEXT_SIZE=96");
     cmd_append(&cmd, "-DCR_CONTEXT_ALIGNEMENT=16");
     COMP_VERBOSE cmd_append(&cmd, "-DVERBOSE");
+    DEBUG_MODE cmd_append(&cmd, "-g");
+    DEBUG_MODE cmd_append(&cmd, "-fsanitize=address,undefined");
     cmd_append(&cmd, "-c");
     cmd_append(&cmd, entry.path);
 
@@ -110,6 +114,7 @@ static int _link_obj(const char* build_dir, const char* o_file)
   cmd_append(&cmd, "cc");
   cmd_append(&cmd, "-Wall");
   cmd_append(&cmd, "-Wextra");
+  DEBUG_MODE cmd_append(&cmd, "-fsanitize=address,undefined");
 
   if(!walk_dir(build_dir, _find_obj_file, .data = &input)) return_defer(1);
 
@@ -144,9 +149,14 @@ static void _parse_input(int argc, char** argv)
     if (CHECK_ARG(argv, "-vc") || CHECK_ARG(argv, "--comp_verbose")) {
       comp_verbose= true;
     }
+    if (CHECK_ARG(argv, "-g") || CHECK_ARG(argv, "--debug")) {
+      comp_debug_mode= true;
+    }
+
     if (CHECK_ARG(argv, "-h") || CHECK_ARG(argv, "--help")) {
       printf("usage ./nob <options>\n");
       printf("\t\t-vn, --nob_verbose\tnob verbose log\n");
+      printf("\t\t-g, --debug\tcompile in debug mode\n");
       printf("\t\t-vc, --comp_verbose\tcompilation verbose log\n");
       printf("\t\t-h, --help\t\tprint this help\n");
       exit(0);

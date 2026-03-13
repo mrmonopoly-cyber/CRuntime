@@ -10,6 +10,5 @@
 
 #include "channel.h"
 #include "debug.h"
-#include "stack.h"
 #include "context.h"
 #include "extern_lib.h"

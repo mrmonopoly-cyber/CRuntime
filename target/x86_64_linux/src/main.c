@@ -1,22 +1,42 @@
+#include "CRuntime/common/HAL/context.h"
 #include <stdio.h>
 #include <unistd.h>
 
 #include <CRuntime/CRuntime.h>
 
-char scheduler_stack[1024];
+char scheduler_stack[16384]__attribute__((__aligned__(16)));
+char task_stack[16384]__attribute__((__aligned__(16)));
+
+int task_f(void* in)
+{
+  UNUSED(in);
+  while (1)
+  {
+    printf("hello from the task\n");
+    sleep(1);
+  }
+}
+
 
 int main(void)
 {
   CRuntime runtime = {0};
   printf("CRuntime started\n");
 
-  CRESULT_ERR_MATCH(CRuntime_init(&runtime, CRStackInit(scheduler_stack, sizeof(scheduler_stack))),
+  CRESULT_ERR_MATCH(CRuntime_init(&runtime, INIT_STATIC_STACK(scheduler_stack)),
       err,{
         printf("error init CRuntime: %s\n", err.description);
         return 1;
       }
   );
 
+  CRESULT_ERR_MATCH(CRuntime_add_task(&runtime,
+        INIT_TASK_ACTION(task_f, NULL), INIT_STATIC_STACK(task_stack)),
+      err,{
+        printf("error start CRuntime: %s\n", err.description);
+        return 1;
+      }
+  );
 
   CRESULT_ERR_MATCH(CRuntime_start_sync(&runtime),
       err,{
@@ -25,12 +45,12 @@ int main(void)
       }
   );
 
-  CRESULT_ERR_MATCH(CRuntime_terminate(&runtime),
-      err,{
-        printf("error terminate CRuntime: %s\n", err.description);
-        return 1;
-      }
-  );
+  // CRESULT_ERR_MATCH(CRuntime_terminate(&runtime),
+  //     err,{
+  //       printf("error terminate CRuntime: %s\n", err.description);
+  //       return 1;
+  //     }
+  // );
 
   printf("CRuntime ended\n");
 

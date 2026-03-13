@@ -4,7 +4,6 @@
 
 #include <CResult.h>
 
-#include <CRuntime/common/HAL/stack.h>
 #include <CRuntime/common/HAL/context.h>
 #include <CRuntime/common/HAL/debug.h>
 #include <CRuntime/common/errors/errors.h>
@@ -16,22 +15,12 @@ CRReturn CTP_init(CTP* const restrict self)
   return OK();
 }
 
-CRReturn _CTP_add_task(CTP* const restrict self, CTask* task)
+CRReturn _CTP_add_task(CTP* const restrict self, const CTask task)
 {
   Context context;
-  void* input_stack_addr = NULL;
   const size_t size_index = sizeof(self->index_bitmap[0])*8;
 
-  CRESULT_FULL_MATCH(
-      CRStack_push(&task->stack, (CRSDataBuffer){.buf = task->input, .size=task->input_size}),
-        res, {
-          input_stack_addr = res;
-        },{
-          return FROM(res);
-        }
-  );
-
-  TRY(Context_init(&context, task->entry, input_stack_addr, task->stack));
+  TRY(Context_init(&context, task.stack, task.action));
 
   //TODO: more efficient
   for(uint16_t i=0;i<sizeof(self->task_pool)/sizeof(self->task_pool[0]);i++)

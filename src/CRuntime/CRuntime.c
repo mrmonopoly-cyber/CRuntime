@@ -4,15 +4,13 @@
 #include <assert.h>
 
 #include <CRuntime/CTask/CTask.h>
-#include <CRuntime/common/HAL/stack.h>
 #include <CRuntime/common/HAL/context.h>
 #include <CRuntime/common/common.h>
 #include <CRuntime/common/errors/errors.h>
 
 typedef struct{
   Context* task_context;
-  const taskAction entry;
-  void* const input;
+  const TaskAction action;
   CRuntime *const self;
 }TaskWrapperIN;
 
@@ -28,7 +26,7 @@ _CRuntime_task_wrapper(void* input)
 {
   Context terminating_context;
   const TaskWrapperIN t_in = *(TaskWrapperIN*) input;
-  int status = t_in.entry(t_in.input);
+  int status = t_in.action.entry(t_in.action.arg);
   UNUSED(status);
   Context_switch(&terminating_context, &t_in.self->runtime_context);
   
@@ -42,12 +40,15 @@ _CRuntime_schedule_next(CRuntime* const restrict self)
   Context idle_task ={0};
   TaskWrapperIN in ={
     .self = self,
-    .input = NULL,
-    .entry = idle_fun,
+    .action = {
+      .entry =idle_fun,
+      .arg = NULL,
+    },
   };
 
   CRESULT_ERR_MATCH(Context_init(&idle_task,
-        _CRuntime_task_wrapper, &in, CRStackInit(idle_stack, sizeof(idle_stack))),
+        (StackView){.size = sizeof(idle_stack), .start_addr = &idle_stack},
+        (TaskAction){.entry=_CRuntime_task_wrapper, &in}),
       err,{
         UNUSED(err);
         while(1) TODO("context init failed"); //FIXME: better error handling
@@ -75,19 +76,16 @@ _CRuntime_trampoline(void* const restrict input)
   CRuntime* const restrict self = (CRuntime *) input;
   UNUSED(self);
   _CRuntime_schedule_next(self);
-  while(1);
+  while(1); //TODO: add a panic
 
   return 0;
 }
 
 CRRETURN
-CRuntime_init(CRuntime* const restrict self, const CRStack stack)
+CRuntime_init(CRuntime* const restrict self, const StackView stack)
 {
-  TRY(Context_init(
-      &self->runtime_context,
-      _CRuntime_trampoline,
-      self,
-      stack));
+  TRY(Context_init(&self->runtime_context,stack,
+        (TaskAction){.entry=_CRuntime_trampoline,.arg=self}));
 
   TRY(CTP_init(&self->task_pool));
 
@@ -95,27 +93,9 @@ CRuntime_init(CRuntime* const restrict self, const CRStack stack)
 }
 
 CRRETURN
-CRuntime_add_task(CRuntime* const restrict self,
-    const taskAction entry, void* input, const CRStack stack)
+CRuntime_add_task(CRuntime* const restrict self, const TaskAction action, const StackView stack)
 {
-  typedef CTaskTemplate(TaskWrapperIN, 1) CTaskWrapper;
-
-  CTaskWrapper task = {
-    .stack = stack,
-    .entry = _CRuntime_task_wrapper,
-    .input_size = sizeof(TaskWrapperIN),
-    .input = 
-    {
-      {
-        .entry = entry,
-        .input = input,
-        .self = self,
-        .task_context = NULL,
-      }
-    },
-  };
-
-  CTP_add_task(&self->task_pool, &task);
+  TRY(CTP_add_task(&self->task_pool, .stack=stack, .action=action));
 
   return OK();
 }
@@ -123,7 +103,8 @@ CRuntime_add_task(CRuntime* const restrict self,
 CRRETURN
 CRuntime_start_sync(CRuntime* const restrict self)
 {
-  Context_switch(NULL, &self->runtime_context);
+  Context ctx={0};
+  Context_switch(&ctx, &self->runtime_context);
   return ERR(CR_STATUS_ERR_UNREACHABLE_CODE, "CRuntime_start_sync terminated, should not happen");
 }
 

@@ -36,22 +36,21 @@ typedef struct {
  * @return return a CResult type. see \ref CRReturn for more info
  */
 CRRETURN
-CRuntime_init(CRuntime* const restrict self, const CRStack stack);
+CRuntime_init(CRuntime* const restrict self, const StackView stack);
 
 /**
  * \brief add a new task to the runtime
  * \important the task does not start immediately, it's scheduled by the runtime
  *
  * @param self the runtime
- * @param entry the function executed by the task
+ * @param action the function executed by the task with its input (optionally)
  * @param input input variable for the entry function
  * @param stack memory where the task will execute
  *
  * @return return a CResult type. see \ref CRReturn for more info
  */
 CRRETURN
-CRuntime_add_task(CRuntime* const restrict self,
-    const taskAction entry, void* input, const CRStack stack);
+CRuntime_add_task(CRuntime* const restrict self, const TaskAction action, const StackView stack);
 
 /**
  * \brief synchronously starts the runtime
