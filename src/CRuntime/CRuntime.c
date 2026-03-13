@@ -4,79 +4,67 @@
 #include <assert.h>
 
 #include <CRuntime/CTask/CTask.h>
-#include <CRuntime/common/HAL/context.h>
 #include <CRuntime/common/common.h>
-#include <CRuntime/common/errors/errors.h>
+#include <stdio.h>
 
-typedef struct{
-  Context* task_context;
-  const TaskAction action;
-  CRuntime *const self;
-}TaskWrapperIN;
-
-char idle_stack[256];
-static int idle_fun(void* input)
+char idle_stack[16384]; //FIXME: need an allocator
+static int idle_fun(void* input, void* env)
 {
+  CTaskEnv* c_env = (CTaskEnv*) env;
   UNUSED(input);
+  while(1)
+  {
+    TODO("time delay for idle task");
+    printf("idle runtime ctx=%p\n", (void*) c_env->runtime_context);
+    Context_switch(c_env->task_context, c_env->runtime_context);
+  }
   return 0;
 }
 
-static int
-_CRuntime_task_wrapper(void* input)
+static int _Cruntime_schedule(CRuntime* self)
 {
-  Context terminating_context;
-  const TaskWrapperIN t_in = *(TaskWrapperIN*) input;
-  int status = t_in.action.entry(t_in.action.arg);
-  UNUSED(status);
-  Context_switch(&terminating_context, &t_in.self->runtime_context);
-  
-  assert(0 && "unreachable");
-  return 0;
-}
-
-static void
-_CRuntime_schedule_next(CRuntime* const restrict self)
-{
-  Context idle_task ={0};
-  TaskWrapperIN in ={
-    .self = self,
-    .action = {
-      .entry =idle_fun,
-      .arg = NULL,
-    },
+  CTask idle_task = {
+    .stack = INIT_STATIC_STACK(idle_stack),
+    .arg = NULL,
+    .entry = idle_fun,
+    .runtime_ctx = &self->runtime_context,
   };
 
-  CRESULT_ERR_MATCH(Context_init(&idle_task,
-        (StackView){.size = sizeof(idle_stack), .start_addr = &idle_stack},
-        (TaskAction){.entry=_CRuntime_task_wrapper, &in}),
-      err,{
-        UNUSED(err);
-        while(1) TODO("context init failed"); //FIXME: better error handling
-      });
-
+  CRESULT_ERR_MATCH(CTP_add_task(&self->task_pool, idle_task),
+      Err,{
+        UNUSED(Err);
+        TODO("manage error in adding idle task");
+        assert(0 && "push idle task failed");
+      }
+  );
   while(1)
   {
     CRESULT_FULL_MATCH(CTP_next(&self->task_pool),
       task,{
+        printf("runtime ctx=%p\n", (void*) &self->runtime_context);
         Context_switch(&self->runtime_context, task);
       },
       {
-        if(task.status != CR_STATUS_ERR_QTASK_EMPTY)
+        UNUSED(task);
+        if (task.status == CR_STATUS_ERR_QTASK_EMPTY)
         {
-          //TODO: manage errros
+        TODO("manage empty task pool, should never e possible but who knows");
+        assert(0 && "empty task pool");
         }
       }
     );
   }
 }
 
-static int 
-_CRuntime_trampoline(void* const restrict input)
+static int _CRuntime_trampoline(void* const restrict input, void* env)
 {
   CRuntime* const restrict self = (CRuntime *) input;
-  UNUSED(self);
-  _CRuntime_schedule_next(self);
-  while(1); //TODO: add a panic
+  UNUSED(env);
+
+  if (self) _Cruntime_schedule(self);
+
+  TODO("panic function");
+  while(1);
 
   return 0;
 }
@@ -84,8 +72,13 @@ _CRuntime_trampoline(void* const restrict input)
 CRRETURN
 CRuntime_init(CRuntime* const restrict self, const StackView stack)
 {
-  TRY(Context_init(&self->runtime_context,stack,
-        (TaskAction){.entry=_CRuntime_trampoline,.arg=self}));
+  TRY(Context_init(
+        &self->runtime_context,
+        stack,
+        INIT_TASK_ACTION(
+          _CRuntime_trampoline,
+          self,
+          NULL)));
 
   TRY(CTP_init(&self->task_pool));
 
@@ -93,9 +86,15 @@ CRuntime_init(CRuntime* const restrict self, const StackView stack)
 }
 
 CRRETURN
-CRuntime_add_task(CRuntime* const restrict self, const TaskAction action, const StackView stack)
+CRuntime_add_task(
+    CRuntime* const restrict self,
+    const entry fun,
+    void* arg,
+    const StackView stack)
 {
-  TRY(CTP_add_task(&self->task_pool, .stack=stack, .action=action));
+  TRY(CTP_add_task(
+        &self->task_pool,
+        (CTask){.stack=stack, .entry=fun, .arg=arg, .runtime_ctx=&self->runtime_context}));
 
   return OK();
 }

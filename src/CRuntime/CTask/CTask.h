@@ -29,10 +29,18 @@ WARNING("using default TASK_POOL_MAX_CAPACITY")
 
 typedef struct{
   StackView stack;
-  const TaskAction action;
+  entry entry;
+  void* arg;
+  void* runtime_ctx;
 }CTask;
 
+typedef struct{
+  Context* task_context;
+  Context* runtime_context;
+}CTaskEnv;
+
 typedef struct CTaskPool{
+  CTaskEnv task_env[TASK_POOL_MAX_CAPACITY];
   Context task_pool[TASK_POOL_MAX_CAPACITY];
   char index_bitmap[(TASK_POOL_MAX_CAPACITY/(sizeof(char)*8)) + sizeof(char)];
 }CTP;
@@ -54,8 +62,7 @@ CRReturn CTP_init(CTP* const restrict self);
  *
  * @return return a CResult type. see \ref CRReturn for more info
  */
-#define CTP_add_task(self, ...) _CTP_add_task((self), ((CTask){__VA_ARGS__}))
-CRReturn _CTP_add_task(CTP* const restrict self, CTask task);
+CRReturn CTP_add_task(CTP* const restrict self, CTask task);
 
 /**
  * \brief get a pointer to the next task's context to execute. 

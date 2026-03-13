@@ -50,7 +50,11 @@ CRuntime_init(CRuntime* const restrict self, const StackView stack);
  * @return return a CResult type. see \ref CRReturn for more info
  */
 CRRETURN
-CRuntime_add_task(CRuntime* const restrict self, const TaskAction action, const StackView stack);
+CRuntime_add_task(
+    CRuntime* const restrict self,
+    const entry fun,
+    void* arg,
+    const StackView stack);
 
 /**
  * \brief synchronously starts the runtime

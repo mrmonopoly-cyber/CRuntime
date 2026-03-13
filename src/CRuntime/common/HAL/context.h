@@ -23,13 +23,14 @@
 #error "context alignement has not been defined, to define it define CR_CONTEXT_ALIGNEMENT globally using -DCR_CONTEXT_ALIGNEMENT=[context size]"
 #endif // !CR_CONTEXT_ALIGNEMENT
 
-typedef int (*entry)(void* input);
+typedef int (*entry)(void* input, void* env);
 typedef struct{
   entry entry;
   void* arg;
+  void* env;
 }TaskAction;
 
-#define INIT_TASK_ACTION(entry, arg) ((TaskAction){entry, arg})
+#define INIT_TASK_ACTION(entry, arg, env) ((TaskAction){(entry), (arg), (env)})
 
 typedef struct{
   void* start_addr;

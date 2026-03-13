@@ -1,4 +1,5 @@
 #include "CRuntime/common/HAL/context.h"
+#include "CRuntime/common/common.h"
 #include <stdio.h>
 #include <unistd.h>
 
@@ -7,9 +8,11 @@
 char scheduler_stack[16384]__attribute__((__aligned__(16)));
 char task_stack[16384]__attribute__((__aligned__(16)));
 
-int task_f(void* in)
+int task_f(void* in, void* env)
 {
   UNUSED(in);
+  UNUSED(env);
+
   while (1)
   {
     printf("hello from the task\n");
@@ -30,13 +33,16 @@ int main(void)
       }
   );
 
-  CRESULT_ERR_MATCH(CRuntime_add_task(&runtime,
-        INIT_TASK_ACTION(task_f, NULL), INIT_STATIC_STACK(task_stack)),
-      err,{
-        printf("error start CRuntime: %s\n", err.description);
-        return 1;
-      }
-  );
+  // CRESULT_ERR_MATCH(CRuntime_add_task(
+  //       &runtime,
+  //       task_f,
+  //       NULL,
+  //       INIT_STATIC_STACK(task_stack)),
+  //     err,{
+  //       printf("error start CRuntime: %s\n", err.description);
+  //       return 1;
+  //     }
+  // );
 
   CRESULT_ERR_MATCH(CRuntime_start_sync(&runtime),
       err,{

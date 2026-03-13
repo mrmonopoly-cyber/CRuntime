@@ -15,12 +15,9 @@ CRReturn CTP_init(CTP* const restrict self)
   return OK();
 }
 
-CRReturn _CTP_add_task(CTP* const restrict self, const CTask task)
+CRReturn CTP_add_task(CTP* const restrict self, const CTask task)
 {
-  Context context;
   const size_t size_index = sizeof(self->index_bitmap[0])*8;
-
-  TRY(Context_init(&context, task.stack, task.action));
 
   //TODO: more efficient
   for(uint16_t i=0;i<sizeof(self->task_pool)/sizeof(self->task_pool[0]);i++)
@@ -29,14 +26,24 @@ CRReturn _CTP_add_task(CTP* const restrict self, const CTask task)
     const uint16_t remainder = (1<<(i%size_index));
     if (!(self->index_bitmap[cell] & remainder))
     {
+      CTaskEnv* const env = &self->task_env[i];
+      const TaskAction action ={
+        .entry = task.entry,
+        .arg = task.arg,
+        .env = env,
+      };
+
+      env->runtime_context = task.runtime_ctx;
+      env->task_context = &self->task_pool[i];
+
+      TRY(Context_init(env->task_context, task.stack, action));
+
       self->index_bitmap[cell] |= remainder;
-      self->task_pool[i] = context;
       return OK();
     }
   }
 
   return ERR(CR_STATUS_ERR_QTASK_FULL,"full task queue, unable to save the task");
-
 }
 
 #define ERR_CTPPORES(...)CRESULT_T_ERR(CTPPopRes, ((CRStatus){__VA_ARGS__}))
@@ -52,7 +59,7 @@ CRESULT_RETURN(CTPPopRes) CTP_next(CTP* const restrict self)
 
     if ((self->index_bitmap[cell] & remainder))
     {
-      self->index_bitmap[cell] ^= remainder;
+      //INFO: task is not removed from the queue
       return CRESULT_T_OK(CTPPopRes, &self->task_pool[i]);
     }
   }

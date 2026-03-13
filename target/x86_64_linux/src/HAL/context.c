@@ -17,6 +17,7 @@ typedef struct{
   Reg r15;
 
   Reg rdi;
+  Reg rsi;
 }CpuState;
 
 struct __ContextImp{
@@ -36,12 +37,12 @@ static void _panic(void)
   while(1);
 }
 
-static void _task_trampoline(Context* cs)
+static void _task_trampoline(Context* cs, void* env)
 {
   struct __ContextImp *ctx = (struct __ContextImp*)cs;
-  printf("trampoline\n");
+  printf("x86_64 context driver trampoline\n");
   if (ctx) {
-    ctx->__action.entry(ctx->__action.arg);
+    ctx->__action.entry(ctx->__action.arg, env);
   }
 }
 
@@ -67,6 +68,7 @@ CRRETURN Context_init(Context* const restrict cs,
 
   ctx->__cpu_state.rsp = (Reg) sp;
   ctx->__cpu_state.rdi = (Reg) ctx;
+  ctx->__cpu_state.rsi = (Reg) action.env;
 
 
   return OK();
@@ -77,27 +79,29 @@ void Context_switch(
     const Context* const restrict new_cs __attribute__((__unused__)))
 {
     __asm__ volatile(
-      "mov %rbx,  0(%rdi)\n"
-      "mov %rsp,  8(%rdi)\n"
-      "mov %r12, 16(%rdi)\n"
-      "mov %r13, 24(%rdi)\n"
-      "mov %r14, 32(%rdi)\n"
-      "mov %r15, 40(%rdi)\n"
-      "mov %rdi, 48(%rdi)\n"
+      "mov %%rbx,  0(%%rdi)\n"
+      "mov %%rsp,  8(%%rdi)\n"
+      "mov %%rbp, 16(%%rdi)\n"
+      "mov %%r12, 24(%%rdi)\n"
+      "mov %%r13, 32(%%rdi)\n"
+      "mov %%r14, 40(%%rdi)\n"
+      "mov %%r15, 48(%%rdi)\n"
+      "mov %%rdi, 56(%%rdi)\n"
+      "mov %%rsi, 64(%%rdi)\n"
 
-      "mov %rdi, 56(%rdi)\n"
-
-      "mov (%rsi), %rsp\n"
-
-      "mov  0(%rsi), %rbx\n" 
-      "mov  8(%rsi), %rsp\n"
-      "mov 16(%rsi), %r12\n"
-      "mov 24(%rsi), %r13\n"
-      "mov 32(%rsi), %r14\n"
-      "mov 40(%rsi), %r15\n"
-
-      "mov 56(%rsi), %rdi\n"
+      "mov  0(%%rsi), %%rbx\n" 
+      "mov  8(%%rsi), %%rsp\n"
+      "mov 16(%%rsi), %%rbp\n"
+      "mov 24(%%rsi), %%r12\n"
+      "mov 32(%%rsi), %%r13\n"
+      "mov 40(%%rsi), %%r14\n"
+      "mov 48(%%rsi), %%r15\n"
+      "mov 56(%%rsi), %%rdi\n"
+      "mov 64(%%rsi), %%rsi\n"
 
       "ret"
+      :
+      :
+      : "memory"
       );
 }
