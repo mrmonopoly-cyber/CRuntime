@@ -17,13 +17,15 @@
 
 #include <CResult.h>
 
+#include <CRuntime/CScheduler/CScheduler.h>
 #include <CRuntime/common/HAL/context.h>
 #include <CRuntime/common/common.h>
 #include <CRuntime/CTask/CTask.h>
 
 typedef struct {
   CTP task_pool;
-  Context runtime_context;
+  Context engines[1];
+  Context CR_context;
 }CRuntime;
 
 /**

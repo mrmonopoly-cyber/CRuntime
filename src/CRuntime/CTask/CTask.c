@@ -8,37 +8,60 @@
 #include <CRuntime/common/HAL/debug.h>
 #include <CRuntime/common/errors/errors.h>
 
+static int _task_trampoline(Context* ctx, Context* caller)
+{
+  if (ctx) {
+    ctx->__action.entry(ctx->__action.arg, caller);
+  }
+  TODO("panic");
+  while(1);
+  return 0;
+}
+
+
+char idle_stack[16384]; //FIXME: need an allocator
+
+static int idle_fun(void* input, void* env)
+{
+  UNUSED(input);
+  while(1)
+  {
+    TODO("time delay for idle task");
+    // Context_switch(NULL, env);
+  }
+  return 0;
+}
 
 CRReturn CTP_init(CTP* const restrict self)
 {
   memset(self, 0, sizeof(*self));
+  CTaskDescription idle_task = {
+    .stack = INIT_STATIC_STACK(idle_stack),
+    .arg = NULL,
+    .entry = idle_fun,
+  };
+
+  TRY(CTP_add_task(self, idle_task));
+
   return OK();
 }
 
-CRReturn CTP_add_task(CTP* const restrict self, const CTask task)
+CRReturn CTP_add_task(CTP* const restrict self, const CTaskDescription task)
 {
-  const size_t size_index = sizeof(self->index_bitmap[0])*8;
+  CTask* task_ref = NULL;
 
   //TODO: more efficient
   for(uint16_t i=0;i<sizeof(self->task_pool)/sizeof(self->task_pool[0]);i++)
   {
-    const uint16_t cell = i/size_index;
-    const uint16_t remainder = (1<<(i%size_index));
-    if (!(self->index_bitmap[cell] & remainder))
+    task_ref = &self->task_pool[i];
+
+    if (task_ref->caller == NULL)
     {
-      CTaskEnv* const env = &self->task_env[i];
-      const TaskAction action ={
-        .entry = task.entry,
-        .arg = task.arg,
-        .env = env,
-      };
+      task_ref = &self->task_pool[i];
+      TRY(Context_init(&task_ref->ctx,
+            task.stack,
+            (TaskAction){(entry)_task_trampoline, &task_ref->ctx, task_ref->caller}));
 
-      env->runtime_context = task.runtime_ctx;
-      env->task_context = &self->task_pool[i];
-
-      TRY(Context_init(env->task_context, task.stack, action));
-
-      self->index_bitmap[cell] |= remainder;
       return OK();
     }
   }
@@ -47,18 +70,18 @@ CRReturn CTP_add_task(CTP* const restrict self, const CTask task)
 }
 
 #define ERR_CTPPORES(...)CRESULT_T_ERR(CTPPopRes, ((CRStatus){__VA_ARGS__}))
-CRESULT_RETURN(CTPPopRes) CTP_next(CTP* const restrict self)
+CRESULT_RETURN(CTPPopRes) CTP_next(CTP* const restrict self, Context* const restrict caller)
 {
-  const size_t size_index = sizeof(self->index_bitmap[0])*8;
+  CTask* task_ref = NULL;
 
   //TODO: more efficient
   for(uint16_t i=0;i<sizeof(self->task_pool)/sizeof(self->task_pool[0]);i++)
   {
-    const uint16_t cell = i/size_index;
-    const uint16_t remainder = (1<<(i%size_index));
+    task_ref = &self->task_pool[i];
 
-    if ((self->index_bitmap[cell] & remainder))
+    if (task_ref->caller != NULL)
     {
+      self->task_pool[i].caller = caller;
       //INFO: task is not removed from the queue
       return CRESULT_T_OK(CTPPopRes, &self->task_pool[i]);
     }

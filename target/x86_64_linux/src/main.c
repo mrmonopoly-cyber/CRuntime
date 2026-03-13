@@ -33,16 +33,16 @@ int main(void)
       }
   );
 
-  // CRESULT_ERR_MATCH(CRuntime_add_task(
-  //       &runtime,
-  //       task_f,
-  //       NULL,
-  //       INIT_STATIC_STACK(task_stack)),
-  //     err,{
-  //       printf("error start CRuntime: %s\n", err.description);
-  //       return 1;
-  //     }
-  // );
+  CRESULT_ERR_MATCH(CRuntime_add_task(
+        &runtime,
+        task_f,
+        NULL,
+        INIT_STATIC_STACK(task_stack)),
+      err,{
+        printf("error start CRuntime: %s\n", err.description);
+        return 1;
+      }
+  );
 
   CRESULT_ERR_MATCH(CRuntime_start_sync(&runtime),
       err,{

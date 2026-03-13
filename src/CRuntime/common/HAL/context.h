@@ -23,6 +23,8 @@
 #error "context alignement has not been defined, to define it define CR_CONTEXT_ALIGNEMENT globally using -DCR_CONTEXT_ALIGNEMENT=[context size]"
 #endif // !CR_CONTEXT_ALIGNEMENT
 
+struct __Context;
+
 typedef int (*entry)(void* input, void* env);
 typedef struct{
   entry entry;
@@ -45,8 +47,14 @@ typedef struct{
   const size_t size;
 }CRSDataBuffer;
 
-typedef struct __Context{
+typedef struct{
   char data[CR_CONTEXT_SIZE];
+}RegistersState;
+
+typedef struct __Context{
+  RegistersState __state;
+  StackView __stack;
+  TaskAction __action;
 }__attribute__((aligned(CR_CONTEXT_ALIGNEMENT))) Context;
 // }ALIGNED_(CR_CONTEXT_ALIGNEMENT) Context; //FIX: why the fucking macro causes compilation error????
 
@@ -54,4 +62,5 @@ CRRETURN Context_init(Context* const restrict cs,
     const StackView stack,
     const TaskAction action);
 
+__attribute__((__naked__))
 void Context_switch(Context* const restrict old_cs, const Context* const restrict new_cs);

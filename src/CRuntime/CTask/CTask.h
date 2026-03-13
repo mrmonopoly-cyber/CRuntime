@@ -31,21 +31,18 @@ typedef struct{
   StackView stack;
   entry entry;
   void* arg;
-  void* runtime_ctx;
-}CTask;
+}CTaskDescription;
 
 typedef struct{
-  Context* task_context;
-  Context* runtime_context;
-}CTaskEnv;
+  Context ctx;
+  Context* caller;
+}CTask;
 
 typedef struct CTaskPool{
-  CTaskEnv task_env[TASK_POOL_MAX_CAPACITY];
-  Context task_pool[TASK_POOL_MAX_CAPACITY];
-  char index_bitmap[(TASK_POOL_MAX_CAPACITY/(sizeof(char)*8)) + sizeof(char)];
+  CTask task_pool[TASK_POOL_MAX_CAPACITY];
 }CTP;
 
-typedef CRESULT_TEMPLATE(Context*, CRStatus) CTPPopRes;
+typedef CRESULT_TEMPLATE(CTask*, CRStatus) CTPPopRes;
 
 /**
  * \brief initialize at task pool
@@ -62,7 +59,7 @@ CRReturn CTP_init(CTP* const restrict self);
  *
  * @return return a CResult type. see \ref CRReturn for more info
  */
-CRReturn CTP_add_task(CTP* const restrict self, CTask task);
+CRReturn CTP_add_task(CTP* const restrict self, CTaskDescription task);
 
 /**
  * \brief get a pointer to the next task's context to execute. 
@@ -72,4 +69,4 @@ CRReturn CTP_add_task(CTP* const restrict self, CTask task);
  * @return if Ok ptr to task's context
  * @rerurn if Err CRstatus
  */
-CRESULT_RETURN(CTPPopRes) CTP_next(CTP* const restrict self);
+CRESULT_RETURN(CTPPopRes) CTP_next(CTP* const restrict self, Context* const restrict caller);
