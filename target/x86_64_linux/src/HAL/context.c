@@ -40,8 +40,6 @@ static void _panic(void)
 static void _task_trampoline(Context* cs)
 {
   struct __ContextImp *ctx = (struct __ContextImp*)cs;
-  printf("x86_64 context driver trampoline: arg: %p, env: %p\n",
-      ctx->__action.arg, ctx->__action.env);
   if (ctx) {
     ctx->__action.entry(ctx->__action.arg, ctx->__action.env);
   }
