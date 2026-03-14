@@ -78,3 +78,5 @@ CRuntime_start_sync(CRuntime* const restrict self);
  */
 CRRETURN
 CRuntime_terminate(CRuntime* const restrict self);
+
+void CRuntime_yield(void* env);

@@ -1,5 +1,6 @@
 #include "CTask.h"
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <CResult.h>
@@ -17,7 +18,7 @@ static int _task_trampoline(void* arg1)
   }
   task->entry=NULL;
   Context_switch(&task->ctx, task->caller);
-  TODO("panic");
+  TODO("panic task trampoline");
   while(1);
   return 0;
 }
@@ -61,7 +62,13 @@ CRESULT_RETURN(CTPPopRes) CTP_next(CTP* const restrict self, Context* const rest
   {
     task_ref = &self->task_pool[i];
 
-    if (task_ref->ctx.__action.entry != NULL &&  task_ref->caller == NULL)
+    if(task_ref->entry==NULL && task_ref->ctx.__action.entry)
+    {
+      memset(task_ref, 0, sizeof(*task_ref));
+    }
+
+    if (task_ref->ctx.__action.entry != NULL &&
+        (task_ref->caller == NULL || task_ref->caller == caller ))
     {
       self->task_pool[i].caller = caller;
       //INFO: task is not removed from the queue

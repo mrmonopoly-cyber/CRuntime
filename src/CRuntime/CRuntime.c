@@ -75,3 +75,9 @@ CRuntime_terminate(CRuntime* const restrict self)
   TODO();
   return OK();
 }
+
+void CRuntime_yield(void* env)
+{
+  CTask* task = (CTask*) env;
+  Context_switch(&task->ctx, task->caller);
+}
