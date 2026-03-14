@@ -13,11 +13,13 @@ int task_f(void* in, void* env)
   UNUSED(in);
   UNUSED(env);
 
-  while (1)
+  for(int a=0;a<5;a++)
   {
     printf("hello from the task\n");
     sleep(1);
   }
+
+  return 0;
 }
 
 

@@ -8,10 +8,13 @@
 #include <CRuntime/common/HAL/debug.h>
 #include <CRuntime/common/errors/errors.h>
 
-static int _task_trampoline(Context* ctx, Context* caller)
+static int _task_trampoline(void* arg1, void* arg2)
 {
+  Context* ctx = (Context*)arg1;
+  TODO("task_trapoline");
+
   if (ctx) {
-    ctx->__action.entry(ctx->__action.arg, caller);
+    ((entry)arg2)(ctx->__action.arg, ctx->__action.env);
   }
   TODO("panic");
   while(1);
@@ -19,30 +22,9 @@ static int _task_trampoline(Context* ctx, Context* caller)
 }
 
 
-char idle_stack[16384]; //FIXME: need an allocator
-
-static int idle_fun(void* input, void* env)
-{
-  UNUSED(input);
-  while(1)
-  {
-    TODO("time delay for idle task");
-    // Context_switch(NULL, env);
-  }
-  return 0;
-}
-
 CRReturn CTP_init(CTP* const restrict self)
 {
   memset(self, 0, sizeof(*self));
-  CTaskDescription idle_task = {
-    .stack = INIT_STATIC_STACK(idle_stack),
-    .arg = NULL,
-    .entry = idle_fun,
-  };
-
-  TRY(CTP_add_task(self, idle_task));
-
   return OK();
 }
 
@@ -55,12 +37,11 @@ CRReturn CTP_add_task(CTP* const restrict self, const CTaskDescription task)
   {
     task_ref = &self->task_pool[i];
 
-    if (task_ref->caller == NULL)
+    if (task_ref->ctx.__action.entry == NULL)
     {
-      task_ref = &self->task_pool[i];
       TRY(Context_init(&task_ref->ctx,
             task.stack,
-            (TaskAction){(entry)_task_trampoline, &task_ref->ctx, task_ref->caller}));
+            (TaskAction){_task_trampoline, &task_ref->ctx, (void*) (uintptr_t) task.entry}));
 
       return OK();
     }
@@ -79,7 +60,7 @@ CRESULT_RETURN(CTPPopRes) CTP_next(CTP* const restrict self, Context* const rest
   {
     task_ref = &self->task_pool[i];
 
-    if (task_ref->caller != NULL)
+    if (task_ref->ctx.__action.entry != NULL &&  task_ref->caller == NULL)
     {
       self->task_pool[i].caller = caller;
       //INFO: task is not removed from the queue
