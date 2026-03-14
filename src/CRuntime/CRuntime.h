@@ -4,9 +4,9 @@
 
 /**
  * \file CRuntime.h 
- * \brief executes concurrently, different, independent tasks autonomously
- * \brief define different tasks
- * \brief switch between tasks
+ * \brief - executes concurrently, different, independent tasks autonomously
+ * \brief - define different tasks
+ * \brief - switch between tasks
  *
  * \author Alberto Damo
  * \date 2026
@@ -80,4 +80,12 @@ CRuntime_start_sync(CRuntime* const restrict self);
 CRRETURN
 CRuntime_terminate(CRuntime* const restrict self);
 
+/**
+ *
+ * \brief interrupt the execution of a task giving back the control to the runtime
+ *
+ * \important this function can only be used inside of a task, using it outside is Undefined Behaviour
+ *
+ * @input env environment about the scheduler, it's given to the task by the runtime itself
+ */
 void CRuntime_yield(void* env);
