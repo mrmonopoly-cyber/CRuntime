@@ -8,14 +8,15 @@
 #include <CRuntime/common/HAL/debug.h>
 #include <CRuntime/common/errors/errors.h>
 
-static int _task_trampoline(void* arg1, void* arg2)
+static int _task_trampoline(void* arg1)
 {
-  Context* ctx = (Context*)arg1;
-  TODO("task_trapoline");
+  CTask* task = (CTask*)arg1;
 
-  if (ctx) {
-    ((entry)arg2)(ctx->__action.arg, ctx->__action.env);
+  if (task) {
+    task->entry(task->ctx.__action.arg, task);
   }
+  task->entry=NULL;
+  Context_switch(&task->ctx, task->caller);
   TODO("panic");
   while(1);
   return 0;
@@ -37,11 +38,11 @@ CRReturn CTP_add_task(CTP* const restrict self, const CTaskDescription task)
   {
     task_ref = &self->task_pool[i];
 
-    if (task_ref->ctx.__action.entry == NULL)
+    if (task_ref->entry == NULL)
     {
-      TRY(Context_init(&task_ref->ctx,
-            task.stack,
-            (TaskAction){_task_trampoline, &task_ref->ctx, (void*) (uintptr_t) task.entry}));
+      task_ref->entry = task.entry;
+      TRY(Context_init(&task_ref->ctx, task.stack,
+            INIT_CONTEXT_ACTION(_task_trampoline, task_ref)));
 
       return OK();
     }

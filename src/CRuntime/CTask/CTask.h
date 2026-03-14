@@ -27,15 +27,17 @@
 WARNING("using default TASK_POOL_MAX_CAPACITY")
 #endif // !TASK_POOL_MAX_CAPACITY
 
+typedef int (*TaskEntry) (void* input, void* env);
 typedef struct{
   StackView stack;
-  entry entry;
+  TaskEntry entry;
   void* arg;
 }CTaskDescription;
 
 typedef struct{
   Context ctx;
   Context* caller;
+  TaskEntry entry;
 }CTask;
 
 typedef struct CTaskPool{

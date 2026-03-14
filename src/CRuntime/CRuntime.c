@@ -1,20 +1,19 @@
 #include "CRuntime.h"
-#include "CRuntime/common/HAL/context.h"
+
+#include <assert.h>
+#include <stddef.h>
 
 #include <CResult.h>
-#include <assert.h>
 
 #include <CRuntime/CScheduler/CScheduler.h>
 #include <CRuntime/common/HAL/debug.h>
 #include <CRuntime/common/errors/errors.h>
 #include <CRuntime/CTask/CTask.h>
 #include <CRuntime/common/common.h>
-#include <stddef.h>
 
-int _CS_trampoline(void* in, void* env)
+int _CS_trampoline(void* in)
 {
   CTP* ctp = (CTP*)in;
-  UNUSED(env);
 
   if (ctp) {
     CS_init(ctp);
@@ -30,10 +29,9 @@ CRuntime_init(CRuntime* const restrict self, const StackView stack) //FIX: bette
 {
   TRY(CTP_init(&self->task_pool));
 
-  TaskAction action ={
+  ContextAction action ={
     .entry = _CS_trampoline,
     .arg = &self->task_pool,
-    .env = NULL,
   };
 
   TRY(Context_init(
@@ -47,7 +45,7 @@ CRuntime_init(CRuntime* const restrict self, const StackView stack) //FIX: bette
 CRRETURN
 CRuntime_add_task(
     CRuntime* const restrict self,
-    const entry fun,
+    const TaskEntry fun,
     void* arg,
     const StackView stack)
 {

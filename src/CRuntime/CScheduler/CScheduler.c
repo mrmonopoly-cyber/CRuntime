@@ -12,10 +12,9 @@
 #include <CRuntime/common/common.h>
 
 char stack_d[16384]__attribute__((__aligned__(16)));
-int debug_task(void* in, void* env)
+int idle_task(void* in)
 {
-  CS* self= (CS*) env;
-  UNUSED(in);
+  CS* self= (CS*) in;
 
   while (1)
   {
@@ -31,10 +30,9 @@ static void _CS_run(CTP* ctp)
   Context idle={0};
   CS self = {0};
   self.task_pool = ctp;
-  const TaskAction action ={
-    .entry = debug_task,
-    .arg = NULL,
-    .env = &self,
+  const ContextAction action ={
+    .entry = idle_task,
+    .arg = &self,
   };
 
   CRESULT_ERR_MATCH(Context_init(&idle, INIT_STATIC_STACK(stack_d), action),

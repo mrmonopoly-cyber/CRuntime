@@ -6,16 +6,31 @@
 #include <CRuntime/CRuntime.h>
 
 char scheduler_stack[16384]__attribute__((__aligned__(16)));
-char task_stack[16384]__attribute__((__aligned__(16)));
+char task_stack_1[16384]__attribute__((__aligned__(16)));
+char task_stack_2[16384]__attribute__((__aligned__(16)));
 
-int task_f(void* in, void* env)
+int task_f_1(void* in, void* env)
 {
   UNUSED(in);
   UNUSED(env);
 
   for(int a=0;a<5;a++)
   {
-    printf("hello from the task\n");
+    printf("hello from the task 1\n");
+    sleep(1);
+  }
+
+  return 0;
+}
+
+int task_f_2(void* in, void* env)
+{
+  UNUSED(in);
+  UNUSED(env);
+
+  for(int a=0;a<5;a++)
+  {
+    printf("hello from the task 2\n");
     sleep(1);
   }
 
@@ -37,11 +52,22 @@ int main(void)
 
   CRESULT_ERR_MATCH(CRuntime_add_task(
         &runtime,
-        task_f,
+        task_f_1,
         NULL,
-        INIT_STATIC_STACK(task_stack)),
+        INIT_STATIC_STACK(task_stack_1)),
       err,{
-        printf("error start CRuntime: %s\n", err.description);
+        printf("error add task_f_1: %s\n", err.description);
+        return 1;
+      }
+  );
+
+  CRESULT_ERR_MATCH(CRuntime_add_task(
+        &runtime,
+        task_f_2,
+        NULL,
+        INIT_STATIC_STACK(task_stack_2)),
+      err,{
+        printf("error add task_f_2: %s\n", err.description);
         return 1;
       }
   );

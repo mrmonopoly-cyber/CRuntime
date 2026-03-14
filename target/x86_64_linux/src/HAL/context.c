@@ -17,13 +17,12 @@ typedef struct{
   Reg r15;
 
   Reg rdi;
-  Reg rsi;
 }CpuState;
 
 struct __ContextImp{
   CpuState __cpu_state;
   StackView __stack;
-  TaskAction __action;
+  ContextAction __action;
 }ALIGNED_(CR_CONTEXT_ALIGNEMENT);
 
 static_assert(sizeof(struct __ContextImp) == sizeof(Context), "context types differ in sizes");
@@ -41,7 +40,7 @@ static void _task_trampoline(Context* cs)
 {
   struct __ContextImp *ctx = (struct __ContextImp*)cs;
   if (ctx) {
-    ctx->__action.entry(ctx->__action.arg, ctx->__action.env);
+    ctx->__action.entry(ctx->__action.arg);
   }
   TODO("panic");
   while(1);
@@ -50,7 +49,7 @@ static void _task_trampoline(Context* cs)
 
 CRRETURN Context_init(Context* const restrict cs,
     const StackView stack,
-    const TaskAction action)
+    const ContextAction action)
 {
   struct __ContextImp* ctx = (struct __ContextImp*)cs;
   uintptr_t sp_addr = 0;

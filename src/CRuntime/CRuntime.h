@@ -54,7 +54,7 @@ CRuntime_init(CRuntime* const restrict self, const StackView stack);
 CRRETURN
 CRuntime_add_task(
     CRuntime* const restrict self,
-    const entry fun,
+    const TaskEntry fun,
     void* arg,
     const StackView stack);
 

@@ -25,14 +25,13 @@
 
 struct __Context;
 
-typedef int (*entry)(void* input, void* env);
+typedef int (*ContextEntry)(void* input);
 typedef struct{
-  entry entry;
+  ContextEntry entry;
   void* arg;
-  void* env;
-}TaskAction;
+}ContextAction;
 
-#define INIT_TASK_ACTION(entry, arg, env) ((TaskAction){(entry), (arg), (env)})
+#define INIT_CONTEXT_ACTION(entry, arg) ((ContextAction){(entry), (arg)})
 
 typedef struct{
   void* start_addr;
@@ -54,13 +53,13 @@ typedef struct{
 typedef struct __Context{
   RegistersState __state;
   StackView __stack;
-  TaskAction __action;
+  ContextAction __action;
 }__attribute__((aligned(CR_CONTEXT_ALIGNEMENT))) Context;
 // }ALIGNED_(CR_CONTEXT_ALIGNEMENT) Context; //FIX: why the fucking macro causes compilation error????
 
 CRRETURN Context_init(Context* const restrict cs,
     const StackView stack,
-    const TaskAction action);
+    const ContextAction action);
 
 __attribute__((__naked__))
 void Context_switch(Context* const restrict old_cs, const Context* const restrict new_cs);
