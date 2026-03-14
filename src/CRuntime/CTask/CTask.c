@@ -33,9 +33,10 @@ CRReturn CTP_init(CTP* const restrict self)
 CRReturn CTP_add_task(CTP* const restrict self, const CTaskDescription task)
 {
   CTask* task_ref = NULL;
+  const size_t task_pool_size = sizeof(self->task_pool)/sizeof(self->task_pool[0]);
 
   //TODO: more efficient
-  for(uint16_t i=0;i<sizeof(self->task_pool)/sizeof(self->task_pool[0]);i++)
+  for(uint16_t i=0; i<task_pool_size; i++)
   {
     task_ref = &self->task_pool[i];
 
@@ -56,12 +57,15 @@ CRReturn CTP_add_task(CTP* const restrict self, const CTaskDescription task)
 CRESULT_RETURN(CTPPopRes) CTP_next(CTP* const restrict self, Context* const restrict caller)
 {
   CTask* task_ref = NULL;
+  const size_t task_pool_size = sizeof(self->task_pool)/sizeof(self->task_pool[0]);
 
   //TODO: more efficient
-  for(uint16_t i=0;i<sizeof(self->task_pool)/sizeof(self->task_pool[0]);i++)
+  for(uint16_t i=0;i<task_pool_size; i++)
   {
-    task_ref = &self->task_pool[i];
+    self->cursor_index= (self->cursor_index+1)%task_pool_size;
+    task_ref = &self->task_pool[self->cursor_index];
 
+    //INFO: if a task has returned than cleanup the data to prevent issues
     if(task_ref->entry==NULL && task_ref->ctx.__action.entry)
     {
       memset(task_ref, 0, sizeof(*task_ref));
@@ -70,9 +74,9 @@ CRESULT_RETURN(CTPPopRes) CTP_next(CTP* const restrict self, Context* const rest
     if (task_ref->ctx.__action.entry != NULL &&
         (task_ref->caller == NULL || task_ref->caller == caller ))
     {
-      self->task_pool[i].caller = caller;
+      task_ref->caller =caller;
       //INFO: task is not removed from the queue
-      return CRESULT_T_OK(CTPPopRes, &self->task_pool[i]);
+      return CRESULT_T_OK(CTPPopRes, task_ref);
     }
   }
   

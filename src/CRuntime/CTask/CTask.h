@@ -42,6 +42,7 @@ typedef struct{
 
 typedef struct CTaskPool{
   CTask task_pool[TASK_POOL_MAX_CAPACITY];
+  size_t cursor_index;
 }CTP;
 
 typedef CRESULT_TEMPLATE(CTask*, CRStatus) CTPPopRes;
