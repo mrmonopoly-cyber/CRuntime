@@ -11,6 +11,8 @@
 #include <CRuntime/CTask/CTask.h>
 #include <CRuntime/common/common.h>
 
+#define FOR_EACH_ENGINE_INDEX(i) for(size_t i=0; i<sizeof(self->engines)/sizeof(self->engines[0]); i++)
+
 int _CS_trampoline(void* in)
 {
   CTP* ctp = (CTP*)in;
@@ -25,19 +27,14 @@ int _CS_trampoline(void* in)
 }
 
 CRRETURN
-CRuntime_init(CRuntime* const restrict self, const StackView stack) //FIX: better cs stacks
+CRuntime_init(CRuntime* const restrict self)
 {
   TRY(CTP_init(&self->task_pool));
 
-  ContextAction action ={
-    .entry = _CS_trampoline,
-    .arg = &self->task_pool,
-  };
-
-  TRY(Context_init(
-        &self->engines[0],
-        stack,
-        action));
+  FOR_EACH_ENGINE_INDEX(i)
+  {
+    TRY(Thread_allocate_memory(&self->engines[i].stack));
+  }
 
   return OK();
 }
@@ -63,7 +60,40 @@ CRuntime_add_task(
 CRRETURN
 CRuntime_start_sync(CRuntime* const restrict self)
 {
-  Context_switch(&self->CR_context, &self->engines[0]);
+  ThreadExec entry = {
+    .entry = _CS_trampoline,
+    .arg = &self->task_pool,
+  };
+  FOR_EACH_ENGINE_INDEX(i)
+  {
+    CRESULT_FULL_MATCH(Thread_start(&self->engines[i].stack, entry),
+        res,
+        {
+          self->engines[i].id = res;
+        },
+        {
+          TODO("free allocated stack in star fails");
+          return ERR(res.status, res.description);
+        }
+    );
+  }
+
+  FOR_EACH_ENGINE_INDEX(i)
+  {
+    CRESULT_FULL_MATCH(Thread_wait(self->engines[i].id),
+        res,
+        {
+          UNUSED(res);
+          TODO("manage results of engines");
+        },
+        {
+          UNUSED(res);
+          TODO("manage err of engines");
+        }
+    );
+  }
+
+
   return OK();
 }
 

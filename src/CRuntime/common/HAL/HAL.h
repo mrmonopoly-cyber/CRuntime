@@ -11,4 +11,5 @@
 #include "channel.h"
 #include "debug.h"
 #include "context.h"
+#include "thread.h"
 #include "extern_lib.h"

@@ -17,6 +17,8 @@
 #define CR_STATUS_ERR_QTASK_FULL 5
 #define CR_STATUS_ERR_UNREACHABLE_CODE 6
 
+#define CR_STATUS_ERR_UNKNOWN 99
+
 typedef struct{
   uint16_t status;
   const char* description;
@@ -29,4 +31,3 @@ typedef CRESULT_TEMPLATE(bool, CRStatus) CRReturn;
 #define OK() CRESULT_T_OK(CRReturn, 0)
 #define ERR(...) CRESULT_T_ERR(CRReturn, ((CRStatus){__VA_ARGS__}))
 #define TRY(res) do{ if(CRESULT_IS_ERR((res))) return res; }while(0)
-#define FROM(err) ERR(.status = (err).status, .description = (err).description)

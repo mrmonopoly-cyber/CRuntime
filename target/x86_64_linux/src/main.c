@@ -3,7 +3,6 @@
 
 #include <CRuntime/CRuntime.h>
 
-char scheduler_stack[16384]__attribute__((__aligned__(16)));
 char task_stack_1[16384]__attribute__((__aligned__(16)));
 char task_stack_2[16384]__attribute__((__aligned__(16)));
 
@@ -41,7 +40,7 @@ int main(void)
   CRuntime runtime = {0};
   printf("CRuntime started\n");
 
-  CRESULT_ERR_MATCH(CRuntime_init(&runtime, INIT_STATIC_STACK(scheduler_stack)),
+  CRESULT_ERR_MATCH(CRuntime_init(&runtime),
       err,{
         printf("error init CRuntime: %s\n", err.description);
         return 1;

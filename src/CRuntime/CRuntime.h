@@ -24,8 +24,10 @@
 
 typedef struct {
   CTP task_pool;
-  Context engines[1];
-  Context CR_context;
+  struct{
+    ThreadMem stack;
+    ThreadId id;
+  }engines[1]; //HACK: 1 is just for now, when the system is stable there will be more
 }CRuntime;
 
 /**
@@ -33,12 +35,11 @@ typedef struct {
  * \important it does not start the runtime
  *
  * @param self pointer to the runtime
- * @param stack object defining the stack for the runtime
  *
  * @return return a CResult type. see \ref CRReturn for more info
  */
 CRRETURN
-CRuntime_init(CRuntime* const restrict self, const StackView stack);
+CRuntime_init(CRuntime* const restrict self);
 
 /**
  * \brief add a new task to the runtime
