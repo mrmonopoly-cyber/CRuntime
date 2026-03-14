@@ -25,9 +25,9 @@
 typedef struct {
   CTP task_pool;
   struct{
-    ThreadMem stack;
+    StackInfo stack;
     ThreadId id;
-  }engines[1]; //HACK: 1 is just for now, when the system is stable there will be more
+  }engines[2]; //INFO: could be any number, now the system is parallel
 }CRuntime;
 
 /**

@@ -30,6 +30,7 @@ CRReturn CTP_init(CTP* const restrict self)
   return OK();
 }
 
+//FIXME: this function is not thread safe
 CRReturn CTP_add_task(CTP* const restrict self, const CTaskDescription task)
 {
   CTask* task_ref = NULL;
@@ -53,6 +54,7 @@ CRReturn CTP_add_task(CTP* const restrict self, const CTaskDescription task)
   return ERR(CR_STATUS_ERR_QTASK_FULL,"full task queue, unable to save the task");
 }
 
+//FIXME: this function is not thread safe
 #define ERR_CTPPORES(...)CRESULT_T_ERR(CTPPopRes, ((CRStatus){__VA_ARGS__}))
 CRESULT_RETURN(CTPPopRes) CTP_next(CTP* const restrict self, Context* const restrict caller)
 {

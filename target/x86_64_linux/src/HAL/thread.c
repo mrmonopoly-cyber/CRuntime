@@ -2,18 +2,12 @@
 
 #include <assert.h>
 #include <pthread.h>
+#include <sys/mman.h>
 
 #include <CResult.h>
 
 #include <CRuntime/common/errors/errors.h>
 #include <unistd.h>
-
-typedef struct{
-  pthread_attr_t attr;
-}ThreadMemImp;
-
-static_assert(sizeof(ThreadMemImp) == sizeof(ThreadMem), "sizeof(ThreadMemImp) == sizeof(ThreadMem)");
-static_assert(_Alignof(ThreadMemImp) == _Alignof(ThreadMem), "_Alignof(ThreadMemImp) == _Alignof(ThreadMem)");
 
 typedef struct{
   ThreadEntry entry;
@@ -30,40 +24,48 @@ void* _entry_wrapper(void* wp)
   return NULL;
 }
 
-CRReturn Thread_allocate_memory(ThreadMem* const th)
+#define OK_AM(...) CRESULT_T_OK(ThreadAM, ((StackInfo){__VA_ARGS__}))
+#define ERR_AM(...) CRESULT_T_ERR(ThreadAM, ((CRStatus){__VA_ARGS__}))
+CRESULT_RETURN(ThreadAM) Thread_allocate_memory(void)
 {
-  ThreadMemImp* self = (ThreadMemImp *) th;
+  void *stack = mmap(NULL, 16384, PROT_WRITE|PROT_READ, MAP_ANONYMOUS|MAP_SHARED, -1, 0);
 
-  if(pthread_attr_init(&self->attr)<0)
-  {
-    return ERR(CR_STATUS_ERR_UNKNOWN, "pthread_attr_init failed");
+  if (stack) {
+    return OK_AM(stack, 16384);
+  }else{
+    return ERR_AM(CR_STATUS_ERR_UNKNOWN, "nmap failed");
   }
 
-  if(pthread_attr_setstacksize(&self->attr, 16384)<0)
-  {
-    return ERR(CR_STATUS_ERR_UNKNOWN, "pthread_attr_setstacksize failed");
-  }
-
-  return OK();
 }
-#undef ERR_THREAD_I
+#undef OK_AM
+#undef ERR_AM
 
 #define ERR_START(...) \
   CRESULT_T_ERR(ThreadStart,((CRStatus){__VA_ARGS__}))
-CRESULT_RETURN(ThreadStart) Thread_start(ThreadMem* const stack, const ThreadExec entry)
+CRESULT_RETURN(ThreadStart) Thread_start(StackInfo* const stack, const ThreadExec entry)
 {
-  ThreadMemImp* self = (ThreadMemImp*) stack;
+  pthread_attr_t ptAttr;
   pthread_t pth;
   EntryWrapperInput in = {
     .entry = entry.entry,
     .arg = entry.arg,
   };
 
-  if(pthread_create(&pth,&self->attr, _entry_wrapper, &in)<0)
+  if(pthread_attr_init(&ptAttr)<0)
+  {
+    return ERR_START(CR_STATUS_ERR_UNKNOWN, "pthread_attr_init failed");
+  }
+
+  if(pthread_attr_setstack(&ptAttr, stack->low_addr, stack->size)<0)
+  {
+    return ERR_START(CR_STATUS_ERR_UNKNOWN, "pthread_attr_setstack failed");
+  }
+
+  if(pthread_create(&pth,&ptAttr, _entry_wrapper, &in)<0)
   {
     return ERR_START(CR_STATUS_ERR_UNKNOWN, "pthread_attr_setstacksize failed");
   }
-  sleep(1);
+  sleep(1); //HACK: for now
 
   return CRESULT_T_OK(ThreadStart, pth);
 }

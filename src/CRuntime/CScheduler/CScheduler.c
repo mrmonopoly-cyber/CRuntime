@@ -1,4 +1,5 @@
 #include "CScheduler.h"
+#include "CRuntime/common/HAL/thread.h"
 
 #include <assert.h>
 
@@ -11,7 +12,6 @@
 
 #include <CRuntime/common/common.h>
 
-char stack_d[16384]__attribute__((__aligned__(16)));
 int idle_task(void* in)
 {
   CS* self= (CS*) in;
@@ -27,20 +27,35 @@ int idle_task(void* in)
 
 static void _CS_run(CTP* ctp)
 {
-  Context idle={0};
   CS self = {0};
-  self.task_pool = ctp;
+  Context idle={0};
   const ContextAction action ={
     .entry = idle_task,
     .arg = &self,
   };
 
-  CRESULT_ERR_MATCH(Context_init(&idle, INIT_STATIC_STACK(stack_d), action),
-      err,{
-        UNUSED(err);
-        TODO("failed init context for idle stack");
-        while (1);
-      });
+  self.task_pool = ctp;
+
+  CRESULT_FULL_MATCH(Thread_allocate_memory(),
+      res,
+      {
+        self.idle_task_stack =res.low_addr;
+        CRESULT_ERR_MATCH(Context_init(&idle, INIT_STACK_VIEW(res.low_addr, res.size), action),
+            err,{
+              UNUSED(err);
+              TODO("failed init context for idle stack, for now panic");
+              while (1);
+            }
+        );
+      },
+      {
+        UNUSED(res);
+        TODO("manage error in idle task stack allocation, for now panic");
+        while(1);
+      }
+  );
+
+
 
   while (1)
   {

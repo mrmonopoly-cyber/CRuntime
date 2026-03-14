@@ -33,7 +33,17 @@ CRuntime_init(CRuntime* const restrict self)
 
   FOR_EACH_ENGINE_INDEX(i)
   {
-    TRY(Thread_allocate_memory(&self->engines[i].stack));
+    CRESULT_FULL_MATCH(Thread_allocate_memory(),
+        res,
+        {
+          self->engines[i].stack = res;
+        },
+        {
+          UNUSED(res);
+          TODO("managet failure in memory allocation, for now panic");
+          while(1);
+        }
+    );
   }
 
   return OK();

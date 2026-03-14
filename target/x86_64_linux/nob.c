@@ -42,6 +42,8 @@ static bool _compile_files(Walk_Entry entry)
     cmd_append(&cmd, "-I../"ROOT_SRC_DIR"/"SRC_DIR);
     cmd_append(&cmd, "-I../"ROOT_SRC_DIR"/"LIB_DIR"/CResult");
 
+    cmd_append(&cmd, "-D_GNU_SOURCE");
+
     cmd_append(&cmd, "-DTHREAD_MEM_INFO_SIZE=56");
     cmd_append(&cmd, "-DTHREAD_MEM_INFO_ALIGNEMENT=8");
 

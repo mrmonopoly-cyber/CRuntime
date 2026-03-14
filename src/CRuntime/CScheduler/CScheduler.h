@@ -15,6 +15,7 @@
 
 typedef struct CScheduler{
   CTP* task_pool;
+  void* idle_task_stack;
   Context ctx;
   Context* active_ctx;
 }CS;
