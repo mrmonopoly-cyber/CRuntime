@@ -48,10 +48,42 @@ typedef struct CSQueue{
 
 typedef CRESULT_TEMPLATE(CTask*, CRStatus) CSQPopRes;
 
+/**
+ * \brief initialize an already allocated CSQ
+ *
+ * @param self pointer to the instance
+ *
+ * @return see \ref CRReturn in errors.h
+ */
 CRRETURN CSQ_init(CSQ* const self);
 
-CRRETURN CSQ_push_try(CSQ* const self, CTask* const task_descr);
+/**
+ * \brief add a reference of an existing task to CSQ, by doing so the executor responsible for
+ * \brief this particular instance will eventually manage the task
+ *
+ * @param self pointer to the instance
+ * @param task pointer to an already allocated and instantiated task
+ *
+ * @return see \ref CRReturn in errors.h
+ */
+CRRETURN CSQ_push_try(CSQ* const self, CTask* const task);
 
+/**
+ * \brief return a reference to a task, it does not remove the reference from self
+ *
+ * @param self pointer to the instance
+ *
+ * @return If Ok the Result contains a valid reference to the task, it cannot be NULL
+ * @return If err see \ref CRReturn in errors.h
+ *
+ */
 CRESULT_RETURN(CSQPopRes) CSQ_pop_try(CSQ* const self);
 
+/**
+ * \brief return the amount of task references in self
+ *
+ * @param self pointer to the instance
+ *
+ * @return see \ref CRReturn in errors.h
+ */
 size_t CSQ_size(const CSQ* const self);

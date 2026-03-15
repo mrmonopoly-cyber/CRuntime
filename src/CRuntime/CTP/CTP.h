@@ -41,6 +41,9 @@ typedef CRESULT_TEMPLATE(CTask*, CRStatus) CTPPopRes;
 
 /**
  * \brief initialize at task pool
+ *
+ * @param self pointer to a valid uninitialized instance of CTP
+ * @param num_active_cores number of active parallel cores in CR_MAX_NUM_OF_CORES
  */
 CRRETURN CTP_init(CTP* const restrict self, const size_t num_active_cores);
 

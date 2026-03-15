@@ -57,9 +57,9 @@ typedef struct __Context{
 /**
  * \brief initialize a new Context using the given stack and setting the first function to call
  *
- * @input cs pointer to the context
- * @input stack info about the stack to use
- * @input action info about the function to call with its arguments 
+ * @param cs pointer to the context
+ * @param stack info about the stack to use
+ * @param action info about the function to call with its arguments 
  */
 CRRETURN Context_init(Context* const restrict cs,
     const StackView stack,
@@ -69,8 +69,8 @@ CRRETURN Context_init(Context* const restrict cs,
  * \brief NAKED function responsible for the context switch.
  * \brief IT saves the current context in old_cs and the load the one from new_cs
  *
- * @input old_cs context object where save the current execution status
- * @input new_cs context object from which load the new context
+ * @param old_cs context object where save the current execution status
+ * @param new_cs context object from which load the new context
  */
 __attribute__((__naked__))
 void Context_switch(Context* const restrict old_cs, const Context* const restrict new_cs);

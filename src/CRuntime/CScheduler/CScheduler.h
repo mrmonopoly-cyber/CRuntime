@@ -24,8 +24,8 @@ typedef struct CScheduler{
 /**
  * \brief initialize the memory for the executor
  *
- * @input cs pointer to the executor
- * @input task_pool ptr to an already initialized task pool
+ * @param cs pointer to the executor
+ * @param task_pool ptr to an already initialized task pool
  *
  * @return look \ref CRStatus for more info
  */
@@ -35,7 +35,7 @@ CRRETURN CS_init(CS* const cs, CSQ* const restrict task_pool);
  * \brief synchronously run the executor.
  * \important takes control of the thread
  *
- * @input cs pointer to the executor
+ * @param cs pointer to the executor
  *
  * @return look \ref CRStatus for more info
  */

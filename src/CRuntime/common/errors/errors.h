@@ -36,7 +36,12 @@ typedef struct{
 }CRStatus;
 
 /**
- *brief CRReturn is a specialization of the CResult type
+ * \brief CRReturn is a specialization of the CResult type.
+ * \brief It's used all around the library as error handling and it has different meaning depending
+ * \brief on the context.
+ * \brief IF Ok: the value can be ignored
+ * \brief IF Err: the status indicates the category of the error in CR_STATUS_****
+ * \brief         the description indicates with greater details the nature of the error
  */
 typedef CRESULT_TEMPLATE(bool, CRStatus) CRReturn;
 
@@ -50,7 +55,7 @@ typedef CRESULT_TEMPLATE(bool, CRStatus) CRReturn;
 /**
  *\brief construct an Err result using status and description from the user
  *
- * @input ... : user inputs to construct the error
+ * @param ... : user inputs to construct the error
  */
 #define ERR(...) CRESULT_T_ERR(CRReturn, ((CRStatus){__VA_ARGS__}))
 
@@ -58,6 +63,6 @@ typedef CRESULT_TEMPLATE(bool, CRStatus) CRReturn;
  * \brief evaluate the result
  * \brief If there is ar error makes the function return that error
  *
- * @input res result type, it can also be an r-value (call of a function)
+ * @param res result type, it can also be an r-value (call of a function)
  */
 #define TRY(res) do{ if(CRESULT_IS_ERR((res))) return res; }while(0)

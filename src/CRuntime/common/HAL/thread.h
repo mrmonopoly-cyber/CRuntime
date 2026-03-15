@@ -46,8 +46,8 @@ CRESULT_RETURN(ThreadAM) Thread_allocate_memory(void);
 /**
  * \brief return a pointer to a new stack for a future thread
  *
- * @input ptr to an already allocated stack for the execution
- * @input entry fun ptr with input
+ * @param ptr to an already allocated stack for the execution
+ * @param entry fun ptr with input
  *
  * @return ThreadId if Ok: unique id of the thread
  * @return CRStatus if if Err with a proper description of the failure
@@ -58,7 +58,7 @@ CRESULT_RETURN(ThreadStart) Thread_start(StackInfo* const stack, const ThreadExe
  * \brief waith until the thread ends and return its exit status or an error message if there was one
  * \brief this function is also responsible to clear the memory of the stack
  *
- * @input self id of the executing thread
+ * @param self id of the executing thread
  *
  * @return int if Ok: exit status of the thread
  * @return CRStatus if if Err with a proper description of the failure

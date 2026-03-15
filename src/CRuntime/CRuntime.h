@@ -93,6 +93,6 @@ CRRETURN CRuntime_terminate(CRuntime* const restrict self);
  *
  * \important this function can only be used inside of a task, using it outside is Undefined Behaviour
  *
- * @input env environment about the scheduler, it's given to the task by the runtime itself
+ * @param env environment about the scheduler, it's given to the task by the runtime itself
  */
 void CRuntime_yield(void* env);
