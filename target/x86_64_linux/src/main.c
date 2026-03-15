@@ -15,7 +15,7 @@ int task_f_1(void* in, void* env)
   for(int a=0;a<5;a++)
   {
     printf("hello from the task 1\n");
-    // CRuntime_yield(env);
+    CRuntime_yield(env);
     sleep(1);
   }
 
@@ -30,7 +30,7 @@ int task_f_2(void* in, void* env)
   for(int a=0;a<5;a++)
   {
     printf("hello from the task 2\n");
-    // CRuntime_yield(env);
+    CRuntime_yield(env);
     sleep(1);
   }
 

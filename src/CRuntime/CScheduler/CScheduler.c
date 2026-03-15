@@ -1,27 +1,13 @@
 #include "CScheduler.h"
-#include "CRuntime/common/errors/errors.h"
 
 #include <assert.h>
-
-#include <CResult.h>
-
-#include <CRuntime/CTask/CTask.h>
-#include <CRuntime/common/common.h>
 
 #define CHECK_CS_INPUT(cs) \
   if (!cs) return ERR(CR_STATUS_ERR_INVALID_INPUT, "CS_init: cs ptr is null")
 
-typedef struct{
-  CTP* task_pool;
-  void* idle_task_stack;
-  Context idle_ctx;
-  Context ctx;
-  Context* active_ctx;
-}__CS;
-
 int idle_task(void* in)
 {
-  __CS* self= (__CS*) in;
+  CS* self= (CS*) in;
 
   while (self)
   {
@@ -32,17 +18,14 @@ int idle_task(void* in)
   while(1);
 }
 
-CRRETURN CS_init(CS* const cs, CTP* const restrict task_pool)
+CRRETURN CS_init(CS* const self, CSQ* const restrict task_pool)
 {
-  __CS* self = NULL;
   ContextAction action ={0};
 
-  CHECK_CS_INPUT(cs);
-  if (!task_pool) return ERR(CR_STATUS_ERR_INVALID_INPUT, "CS_init: task_pool ptr is null");
+  assert(self);
 
-  memset(cs, 0, sizeof(*cs));
+  memset(self, 0, sizeof(*self));
 
-  self = (__CS*) cs;
   self->task_pool = task_pool;
 
   action.arg = self;
@@ -65,20 +48,19 @@ CRRETURN CS_init(CS* const cs, CTP* const restrict task_pool)
   return OK();
 }
 
-CRRETURN CS_run(CS* const restrict cs)
+CRRETURN CS_run(CS* const restrict self)
 {
-  __CS* self = NULL;
-
-  CHECK_CS_INPUT(cs);
-
-  self = (__CS*) cs;
+  assert(self);
 
   while (1)
   {
     self->active_ctx = &self->idle_ctx;
-    CRESULT_OK_MATCH(CTP_next(self->task_pool, &self->ctx),
-        res,self->active_ctx = &res->ctx;);
-
+    CRESULT_OK_MATCH(CSQ_pop_try(self->task_pool),
+        res,{
+          res->caller = &self->ctx;
+          self->active_ctx = &res->ctx;
+        }
+    );
     Context_switch(&self->ctx, self->active_ctx);
   }
 

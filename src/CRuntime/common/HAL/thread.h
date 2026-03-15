@@ -56,6 +56,7 @@ CRESULT_RETURN(ThreadStart) Thread_start(StackInfo* const stack, const ThreadExe
 
 /**
  * \brief waith until the thread ends and return its exit status or an error message if there was one
+ * \brief this function is also responsible to clear the memory of the stack
  *
  * @input self id of the executing thread
  *
