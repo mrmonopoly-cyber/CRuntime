@@ -1,4 +1,7 @@
 #include "CScheduler.h"
+#include "CRuntime/CTP/CSQ/CSQ.h"
+#include "CRuntime/common/HAL/debug.h"
+#include "CRuntime/common/common.h"
 
 #include <assert.h>
 
@@ -54,14 +57,26 @@ CRRETURN CS_run(CS* const restrict self)
 
   while (1)
   {
+    CTask* task = NULL;
     self->active_ctx = &self->idle_ctx;
     CRESULT_OK_MATCH(CSQ_pop_try(self->task_pool),
         res,{
+          task = res;
           res->caller = &self->ctx;
           self->active_ctx = &res->ctx;
         }
     );
     Context_switch(&self->ctx, self->active_ctx);
+    if (task && task->entry)
+    {
+      //FIXME: task should return to general scheduler, now it's stuck on the same executor
+      CRESULT_ERR_MATCH(CSQ_push_try(self->task_pool, task),
+          err,{
+            UNUSED(err);
+            TODO("manage failure in reinserting the task");
+            }
+      );
+    }
   }
 
   return OK();

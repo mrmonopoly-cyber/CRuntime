@@ -1,5 +1,4 @@
 #include "CSQ.h"
-#include "CResult.h"
 
 #include <assert.h>
 #include <stdatomic.h>
@@ -38,8 +37,8 @@ CRESULT_RETURN(CSQPopRes) CSQ_pop_try(CSQ* const self)
 {
   assert(self);
 
-  CTask* p_task = NULL;
   size_t read = atomic_load(&self->read_cursor);
+  CTask* p_task = self->list[read];
 
   if (read != atomic_load(&self->write_cursor))
   {
@@ -58,12 +57,10 @@ size_t CSQ_size(const CSQ* const self)
   size_t read = atomic_load(&self->read_cursor);
   size_t write = atomic_load(&self->write_cursor);
 
-  if (write > read)
+  if(write < read)
   {
-    return write - read;
-  }else{
     read -= write;
-    return CSQ_CAPACITY - read -1;
+    return CSQ_CAPACITY - read;
   }
-
+  return read ? write - (read - 1) : write - read;
 }

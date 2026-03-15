@@ -34,6 +34,7 @@ typedef struct{
 typedef struct CTaskPool{
   CSQ exec_queue[CR_MAX_NUM_OF_CORES];
   CTask list[CTP_CAPACITY];
+  size_t active_cores;
 }CTP;
 
 typedef CRESULT_TEMPLATE(CTask*, CRStatus) CTPPopRes;

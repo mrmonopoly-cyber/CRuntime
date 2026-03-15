@@ -1,7 +1,4 @@
 #include "CTP.h"
-#include "CResult.h"
-#include "CRuntime/common/HAL/context.h"
-#include "CRuntime/common/errors/errors.h"
 
 #include <assert.h>
 #include <stdatomic.h>
@@ -33,6 +30,8 @@ CRRETURN CTP_init(CTP* const restrict self, const size_t num_active_cores)
     TRY(CSQ_init(&self->exec_queue[i]));
   }
 
+  self->active_cores = num_active_cores;
+
   return OK();
 }
 
@@ -54,7 +53,7 @@ CRRETURN CTP_add_task(CTP* const restrict self, const CTaskDescription task)
   };
 
   //INFO: inefficient
-  for(size_t i=1; i<sizeof(self->exec_queue)/sizeof(self->exec_queue[0]); i++)
+  for(size_t i=0; i<self->active_cores; i++)
   {
     new_size =CSQ_size(&self->exec_queue[i]);
     if (!new_size)
@@ -94,7 +93,6 @@ CRRETURN CTP_add_task(CTP* const restrict self, const CTaskDescription task)
       break;
     }
   }
-
 
   return OK();
 }
