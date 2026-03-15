@@ -44,6 +44,8 @@ static bool _compile_files(Walk_Entry entry)
 
     cmd_append(&cmd, "-D_GNU_SOURCE");
 
+    cmd_append(&cmd, "-DCR_MAX_NUM_OF_CORES=2");
+
     cmd_append(&cmd, "-DTHREAD_MEM_INFO_SIZE=56");
     cmd_append(&cmd, "-DTHREAD_MEM_INFO_ALIGNEMENT=8");
 

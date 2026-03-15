@@ -33,15 +33,26 @@ typedef struct __attribute__((__aligned__(CRUNTIME_ALIGN))){
   char data[CRUNTIME_SIZE];
 }CRuntime;
 
+typedef struct{
+  const size_t active_cores; /*!< num of usable cores of CR_MAX_NUM_OF_CORES*/
+}CRuntimeInitOpt;
+
+/**
+ * \brief default values for runtime's parameters
+ */
+#define CRUNTIME_DEFAULTS .active_cores = CR_MAX_NUM_OF_CORES,
+
 /**
  * \brief initialize runtime using the stack given by the user.
  * \important it does not start the runtime
  *
  * @param self pointer to the runtime
+ * @param opt optional parameters to tune the runtime \ref CRuntimeInitOpt.
  *
  * @return return a CResult type. see \ref CRReturn for more info
  */
-CRRETURN CRuntime_init(CRuntime* const restrict self);
+CRRETURN _CRuntime_init(CRuntime* const restrict self, const CRuntimeInitOpt opt);
+#define CRuntime_init(self,...) _CRuntime_init((self), ((CRuntimeInitOpt){__VA_ARGS__}))
 
 /**
  * \brief add a new task to the runtime

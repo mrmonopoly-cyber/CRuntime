@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include <CRuntime/CRuntime.h>
@@ -37,12 +38,21 @@ int task_f_2(void* in, void* env)
 }
 
 
-int main(void)
+int main(int argc, char** argv)
 {
   CRuntime runtime = {0};
   printf("CRuntime started\n");
 
-  CRESULT_ERR_MATCH(CRuntime_init(&runtime),
+  size_t active_procs = 1;
+
+  if (argc > 1)
+  {
+    active_procs = atoi(argv[1]);
+  }
+
+  printf("using %lu procs of %d\n",active_procs, CR_MAX_NUM_OF_CORES);
+
+  CRESULT_ERR_MATCH(CRuntime_init(&runtime, .active_cores = active_procs),
       err,{
         printf("error init CRuntime: %s\n", err.description);
         return 1;

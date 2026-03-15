@@ -1,29 +1,26 @@
 #include "CRuntime.h"
+#include "CRuntime/common/errors/errors.h"
 
 #include <assert.h>
 #include <stddef.h>
 
 #include <CResult.h>
 
-#include <CRuntime/CScheduler/CScheduler.h>
-#include <CRuntime/common/HAL/debug.h>
-#include <CRuntime/common/errors/errors.h>
-#include <CRuntime/CTask/CTask.h>
 #include <CRuntime/common/common.h>
-
 
 typedef struct {
   CTP task_pool;
   struct{
     StackInfo stack;
     ThreadId id;
-  }engines[2]; //INFO: could be any number, now the system is parallel
+  }engines[CR_MAX_NUM_OF_CORES];
 }CRuntimeImp;
 
 static_assert(sizeof(CRuntimeImp)==sizeof(CRuntime), "sizeof(CRuntimeImp)==sizeof(CRuntime)");
 static_assert(_Alignof(CRuntimeImp)==_Alignof(CRuntime), "_Alignof(CRuntimeImp)==_Alignof(CRuntime)");
 
-#define FOR_EACH_ENGINE_INDEX(i) for(size_t i=0; i<sizeof(self->engines)/sizeof(self->engines[0]); i++)
+#define CHECK_SELF_INPUT(self) \
+  if(!(self)) return ERR(CR_STATUS_ERR_INVALID_INPUT, "CRuntime input ptr is NULL");
 
 int _CS_trampoline(void* in)
 {
@@ -51,13 +48,20 @@ int _CS_trampoline(void* in)
   return 0;
 }
 
-CRRETURN
-CRuntime_init(CRuntime* const restrict cr)
+CRRETURN _CRuntime_init(CRuntime* const restrict cr, const CRuntimeInitOpt opt)
 {
   CRuntimeImp* self = (CRuntimeImp*)cr;
+
+  CHECK_SELF_INPUT(self);
+
+  if (opt.active_cores > CR_MAX_NUM_OF_CORES)
+  {
+    return ERR(CR_STATUS_ERR_INVALID_INPUT, "active cores is bigger than CR_MAX_NUM_OF_CORES");
+  }
+
   TRY(CTP_init(&self->task_pool));
 
-  FOR_EACH_ENGINE_INDEX(i)
+  for(size_t i=0;i<opt.active_cores;i++)
   {
     CRESULT_FULL_MATCH(Thread_allocate_memory(),
         res,
@@ -75,8 +79,7 @@ CRuntime_init(CRuntime* const restrict cr)
   return OK();
 }
 
-CRRETURN
-CRuntime_add_task(
+CRRETURN CRuntime_add_task(
     CRuntime* const restrict cr,
     const TaskEntry fun,
     void* arg,
@@ -88,22 +91,29 @@ CRuntime_add_task(
     .stack = stack,
     .arg = arg
   };
+  CHECK_SELF_INPUT(self);
 
   TRY(CTP_add_task(&self->task_pool, desc));
 
   return OK();
 }
 
-CRRETURN
-CRuntime_start_sync(CRuntime* const restrict cr)
+CRRETURN CRuntime_start_sync(CRuntime* const restrict cr)
 {
   CRuntimeImp* self = (CRuntimeImp*)cr;
   ThreadExec entry = {
     .entry = _CS_trampoline,
     .arg = &self->task_pool,
   };
-  FOR_EACH_ENGINE_INDEX(i)
+  CHECK_SELF_INPUT(self);
+
+  for(int i=0;i<CR_MAX_NUM_OF_CORES;i++)
   {
+    if (self->engines[i].stack.low_addr == NULL)
+    {
+      //INFO: skip if not really initialized, may be an error or the core has been activated
+      continue;
+    }
     CRESULT_FULL_MATCH(Thread_start(&self->engines[i].stack, entry),
         res,
         {
@@ -116,8 +126,13 @@ CRuntime_start_sync(CRuntime* const restrict cr)
     );
   }
 
-  FOR_EACH_ENGINE_INDEX(i)
+  for(int i=0;i<CR_MAX_NUM_OF_CORES;i++)
   {
+    if (self->engines[i].stack.low_addr == NULL)
+    {
+      //INFO: skip if not really initialized, may be an error or the core has been activated
+      continue;
+    }
     CRESULT_FULL_MATCH(Thread_wait(self->engines[i].id),
         res,
         {
