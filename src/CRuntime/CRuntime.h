@@ -22,12 +22,15 @@
 #include <CRuntime/common/common.h>
 #include <CRuntime/CTask/CTask.h>
 
-typedef struct {
-  CTP task_pool;
-  struct{
-    StackInfo stack;
-    ThreadId id;
-  }engines[2]; //INFO: could be any number, now the system is parallel
+#if !defined(CRUNTIME_SIZE) && !defined(CRUNTIME_ALIGN)
+#define CRUNTIME_SIZE 14400
+#define CRUNTIME_ALIGN 16
+#else
+#errro "CRUNTIME_SIZE AND CRUNTIME_ALIGN are for internal use and MUST NOT be defined by user"
+#endif // !!defined(CRUNTIME_SIZE) && !defined(CRUNTIME_ALIGN)
+
+typedef struct __attribute__((__aligned__(CRUNTIME_ALIGN))){
+  char data[CRUNTIME_SIZE];
 }CRuntime;
 
 /**
@@ -38,8 +41,7 @@ typedef struct {
  *
  * @return return a CResult type. see \ref CRReturn for more info
  */
-CRRETURN
-CRuntime_init(CRuntime* const restrict self);
+CRRETURN CRuntime_init(CRuntime* const restrict self);
 
 /**
  * \brief add a new task to the runtime
@@ -52,8 +54,7 @@ CRuntime_init(CRuntime* const restrict self);
  *
  * @return return a CResult type. see \ref CRReturn for more info
  */
-CRRETURN
-CRuntime_add_task(
+CRRETURN CRuntime_add_task(
     CRuntime* const restrict self,
     const TaskEntry fun,
     void* arg,
@@ -67,8 +68,7 @@ CRuntime_add_task(
  *
  * @return return a CResult type. see \ref CRReturn for more info
  */
-CRRETURN
-CRuntime_start_sync(CRuntime* const restrict self);
+CRRETURN CRuntime_start_sync(CRuntime* const restrict self);
 
 /**
  * \brief stop the runtime if it's executing, otherwise it does nothing
@@ -77,8 +77,7 @@ CRuntime_start_sync(CRuntime* const restrict self);
  *
  * @return return a CResult type. see \ref CRReturn for more info
  */
-CRRETURN
-CRuntime_terminate(CRuntime* const restrict self);
+CRRETURN CRuntime_terminate(CRuntime* const restrict self);
 
 /**
  *

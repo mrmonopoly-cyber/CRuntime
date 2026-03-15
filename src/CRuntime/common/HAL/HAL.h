@@ -1,10 +1,15 @@
 #pragma once
 
+// Copyright (c) 2026 Alberto Damo. All Rights Reserved.
+
 /*
- * Copyright (c) 2026 Alberto Damo. All Rights Reserved.
+ * \file HAL.h
  *
- * the Hardware Abstraction Layer (HAL) is an interface with all the function which must be
- * implemented to deploy CRuntime on a specific vendor (OS, RTOS, bare-metal,...).
+ * \brief the Hardware Abstraction Layer (HAL) is an interface with all the function which must be
+ * \brief implemented to deploy CRuntime on a specific vendor (OS, RTOS, bare-metal,...).
+ *
+ * \author Alberto Damo
+ * \date 2026
  */
 
 

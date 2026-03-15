@@ -9,6 +9,11 @@
 #include <CRuntime/common/HAL/debug.h>
 #include <CRuntime/common/errors/errors.h>
 
+typedef struct{
+  CTask task_pool[TASK_POOL_MAX_CAPACITY];
+  size_t cursor_index;
+}__CTP;
+
 static int _task_trampoline(void* arg1)
 {
   CTask* task = (CTask*)arg1;
@@ -24,15 +29,16 @@ static int _task_trampoline(void* arg1)
 }
 
 
-CRReturn CTP_init(CTP* const restrict self)
+CRRETURN CTP_init(CTP* const restrict self)
 {
   memset(self, 0, sizeof(*self));
   return OK();
 }
 
 //FIXME: this function is not thread safe
-CRReturn CTP_add_task(CTP* const restrict self, const CTaskDescription task)
+CRRETURN CTP_add_task(CTP* const restrict cs, const CTaskDescription task)
 {
+  __CTP* self = (__CTP*) cs;
   CTask* task_ref = NULL;
   const size_t task_pool_size = sizeof(self->task_pool)/sizeof(self->task_pool[0]);
 
@@ -56,8 +62,9 @@ CRReturn CTP_add_task(CTP* const restrict self, const CTaskDescription task)
 
 //FIXME: this function is not thread safe
 #define ERR_CTPPORES(...)CRESULT_T_ERR(CTPPopRes, ((CRStatus){__VA_ARGS__}))
-CRESULT_RETURN(CTPPopRes) CTP_next(CTP* const restrict self, Context* const restrict caller)
+CRESULT_RETURN(CTPPopRes) CTP_next(CTP* const restrict cs, Context* const restrict caller)
 {
+  __CTP* self = (__CTP*) cs;
   CTask* task_ref = NULL;
   const size_t task_pool_size = sizeof(self->task_pool)/sizeof(self->task_pool[0]);
 

@@ -11,24 +11,50 @@
 #include <CRuntime/CTask/CTask.h>
 #include <CRuntime/common/common.h>
 
+
+typedef struct {
+  CTP task_pool;
+  struct{
+    StackInfo stack;
+    ThreadId id;
+  }engines[2]; //INFO: could be any number, now the system is parallel
+}CRuntimeImp;
+
+static_assert(sizeof(CRuntimeImp)==sizeof(CRuntime), "sizeof(CRuntimeImp)==sizeof(CRuntime)");
+static_assert(_Alignof(CRuntimeImp)==_Alignof(CRuntime), "_Alignof(CRuntimeImp)==_Alignof(CRuntime)");
+
 #define FOR_EACH_ENGINE_INDEX(i) for(size_t i=0; i<sizeof(self->engines)/sizeof(self->engines[0]); i++)
 
 int _CS_trampoline(void* in)
 {
+  CS cs ={0};
   CTP* ctp = (CTP*)in;
 
   if (ctp) {
-    CS_init(ctp);
+    CRESULT_ERR_MATCH(CS_init(&cs,ctp),
+        res,{
+          TODO("use the error msg in case of failure of CS_init");
+          return -res.status;
+        }
+    );
+
+    CRESULT_ERR_MATCH(CS_run(&cs),
+        res,{
+          TODO("use the error msg in case of failure of CS_run");
+          return -res.status;
+        }
+    );
   }
 
-  TODO("panic");
+  TODO("_CS_trampoline: panic");
   while(1);
   return 0;
 }
 
 CRRETURN
-CRuntime_init(CRuntime* const restrict self)
+CRuntime_init(CRuntime* const restrict cr)
 {
+  CRuntimeImp* self = (CRuntimeImp*)cr;
   TRY(CTP_init(&self->task_pool));
 
   FOR_EACH_ENGINE_INDEX(i)
@@ -51,11 +77,12 @@ CRuntime_init(CRuntime* const restrict self)
 
 CRRETURN
 CRuntime_add_task(
-    CRuntime* const restrict self,
+    CRuntime* const restrict cr,
     const TaskEntry fun,
     void* arg,
     const StackView stack)
 {
+  CRuntimeImp* self = (CRuntimeImp*)cr;
   CTaskDescription desc ={
     .entry = fun,
     .stack = stack,
@@ -68,8 +95,9 @@ CRuntime_add_task(
 }
 
 CRRETURN
-CRuntime_start_sync(CRuntime* const restrict self)
+CRuntime_start_sync(CRuntime* const restrict cr)
 {
+  CRuntimeImp* self = (CRuntimeImp*)cr;
   ThreadExec entry = {
     .entry = _CS_trampoline,
     .arg = &self->task_pool,

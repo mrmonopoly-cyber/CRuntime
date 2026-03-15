@@ -40,17 +40,23 @@ typedef struct{
   TaskEntry entry;
 }CTask;
 
+#if !defined (CTP_SIZE) && !defined (CTP_ALIGN)
+#define CTP_SIZE 14352
+#define CTP_ALIGN 16
+#else
+#errro "CTP_SIZE AND CTP_ALIGN are for internal use and MUST NOT be defined by user"
+#endif // !defined (CTP_SIZE) && !defined (CTP_ALIGN)
+
 typedef struct CTaskPool{
-  CTask task_pool[TASK_POOL_MAX_CAPACITY];
-  size_t cursor_index;
-}CTP;
+  char data[CTP_SIZE];
+}CTP __attribute__((__aligned__(CTP_ALIGN)));
 
 typedef CRESULT_TEMPLATE(CTask*, CRStatus) CTPPopRes;
 
 /**
  * \brief initialize at task pool
  */
-CRReturn CTP_init(CTP* const restrict self);
+CRRETURN CTP_init(CTP* const restrict self);
 
 /**
  * \brief add a new specialized task in pool
@@ -62,7 +68,7 @@ CRReturn CTP_init(CTP* const restrict self);
  *
  * @return return a CResult type. see \ref CRReturn for more info
  */
-CRReturn CTP_add_task(CTP* const restrict self, CTaskDescription task);
+CRRETURN CTP_add_task(CTP* const restrict self, CTaskDescription task);
 
 /**
  * \brief get a pointer to the next task's context to execute. 

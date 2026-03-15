@@ -13,17 +13,14 @@
 #include <stddef.h>
 
 #include <CRuntime/common/common.h>
-#include <CRuntime/common/errors/errors.h>
 
 #ifndef CR_CONTEXT_SIZE
 #error "context size has not been defined, to define it define CR_CONTEXT_SIZE globally using -DCR_CONTEXT_SIZE=[context size]"
 #endif // !CR_CONTEXT_SIZE
 
 #ifndef CR_CONTEXT_ALIGNEMENT
-#error "context alignement has not been defined, to define it define CR_CONTEXT_ALIGNEMENT globally using -DCR_CONTEXT_ALIGNEMENT=[context size]"
+#error "context alignement has not been defined, to define it define CR_CONTEXT_ALIGNEMENT globally using -DCR_CONTEXT_ALIGNEMENT=[context alignement]"
 #endif // !CR_CONTEXT_ALIGNEMENT
-
-struct __Context;
 
 typedef int (*ContextEntry)(void* input);
 typedef struct{
@@ -57,9 +54,23 @@ typedef struct __Context{
 }__attribute__((aligned(CR_CONTEXT_ALIGNEMENT))) Context;
 // }ALIGNED_(CR_CONTEXT_ALIGNEMENT) Context; //FIX: why the fucking macro causes compilation error????
 
+/**
+ * \brief initialize a new Context using the given stack and setting the first function to call
+ *
+ * @input cs pointer to the context
+ * @input stack info about the stack to use
+ * @input action info about the function to call with its arguments 
+ */
 CRRETURN Context_init(Context* const restrict cs,
     const StackView stack,
     const ContextAction action);
 
+/**
+ * \brief NAKED function responsible for the context switch.
+ * \brief IT saves the current context in old_cs and the load the one from new_cs
+ *
+ * @input old_cs context object where save the current execution status
+ * @input new_cs context object from which load the new context
+ */
 __attribute__((__naked__))
 void Context_switch(Context* const restrict old_cs, const Context* const restrict new_cs);

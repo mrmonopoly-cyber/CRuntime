@@ -1,52 +1,59 @@
 #include "CScheduler.h"
-#include "CRuntime/common/HAL/thread.h"
+#include "CRuntime/common/errors/errors.h"
 
 #include <assert.h>
 
 #include <CResult.h>
 
 #include <CRuntime/CTask/CTask.h>
-#include <CRuntime/common/HAL/context.h>
-#include <CRuntime/common/HAL/debug.h>
-
-
 #include <CRuntime/common/common.h>
+
+#define CHECK_CS_INPUT(cs) \
+  if (!cs) return ERR(CR_STATUS_ERR_INVALID_INPUT, "CS_init: cs ptr is null")
+
+typedef struct{
+  CTP* task_pool;
+  void* idle_task_stack;
+  Context idle_ctx;
+  Context ctx;
+  Context* active_ctx;
+}__CS;
 
 int idle_task(void* in)
 {
-  CS* self= (CS*) in;
+  __CS* self= (__CS*) in;
 
-  while (1)
+  while (self)
   {
     Context_switch(self->active_ctx, &self->ctx);
   }
 
-  TODO("panic");
+  TODO("idle_task: panic");
   while(1);
 }
 
-static void _CS_run(CTP* ctp)
+CRRETURN CS_init(CS* const cs, CTP* const restrict task_pool)
 {
-  CS self = {0};
-  Context idle={0};
-  const ContextAction action ={
-    .entry = idle_task,
-    .arg = &self,
-  };
+  __CS* self = NULL;
+  ContextAction action ={0};
 
-  self.task_pool = ctp;
+  CHECK_CS_INPUT(cs);
+  if (!task_pool) return ERR(CR_STATUS_ERR_INVALID_INPUT, "CS_init: task_pool ptr is null");
+
+  memset(cs, 0, sizeof(*cs));
+
+  self = (__CS*) cs;
+  self->task_pool = task_pool;
+
+  action.arg = self;
+  action.entry = idle_task;
 
   CRESULT_FULL_MATCH(Thread_allocate_memory(),
       res,
       {
-        self.idle_task_stack =res.low_addr;
-        CRESULT_ERR_MATCH(Context_init(&idle, INIT_STACK_VIEW(res.low_addr, res.size), action),
-            err,{
-              UNUSED(err);
-              TODO("failed init context for idle stack, for now panic");
-              while (1);
-            }
-        );
+        StackView idle_stack = INIT_STACK_VIEW(res.low_addr, res.size);
+        self->idle_task_stack =res.low_addr;
+        TRY(Context_init(&self->idle_ctx, idle_stack, action));
       },
       {
         UNUSED(res);
@@ -55,27 +62,25 @@ static void _CS_run(CTP* ctp)
       }
   );
 
+  return OK();
+}
 
+CRRETURN CS_run(CS* const restrict cs)
+{
+  __CS* self = NULL;
+
+  CHECK_CS_INPUT(cs);
+
+  self = (__CS*) cs;
 
   while (1)
   {
-    self.active_ctx = &idle;
-    CRESULT_OK_MATCH(CTP_next(self.task_pool, &self.ctx),
-        res,self.active_ctx = &res->ctx;);
+    self->active_ctx = &self->idle_ctx;
+    CRESULT_OK_MATCH(CTP_next(self->task_pool, &self->ctx),
+        res,self->active_ctx = &res->ctx;);
 
-    Context_switch(&self.ctx, self.active_ctx);
+    Context_switch(&self->ctx, self->active_ctx);
   }
 
-  TODO("panic");
-  while(1);
-}
-
-void CS_init(CTP* const restrict task_pool)
-{
-  if (task_pool) {
-    _CS_run(task_pool);
-  }
-
-  TODO("panic");
-  while(1);
+  return OK();
 }
