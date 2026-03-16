@@ -35,18 +35,21 @@ Below an example on how to use the library:
 char task_stack_1[16384]__attribute__((__aligned__(16)));
 char task_stack_2[16384]__attribute__((__aligned__(16)));
 
+void foo(int n, int an)
+{
+  for(int a=0;a<5;a++)
+  {
+    printf("the answer from task %d is: %d\n", n, an);
+    CRuntime_yield();
+    sleep(1);
+  }
+}
+
 int task_f_1(void* in)
 {
   int answer = (int)(uintptr_t)in;
 
-  UNUSED(in);
-
-  for(int a=0;a<5;a++)
-  {
-    printf("the answer from task 1 is: %d\n", answer);
-    CRuntime_yield();
-    sleep(1);
-  }
+  foo(1, answer);
 
   return 0;
 }
@@ -54,16 +57,7 @@ int task_f_1(void* in)
 int task_f_2(void* in)
 {
   int answer = (int)(uintptr_t)in;
-
-  UNUSED(in);
-
-  for(int a=0;a<5;a++)
-  {
-    printf("the answer from task 1 is: %d\n", answer);
-    CRuntime_yield();
-    sleep(1);
-  }
-
+  foo(2, answer);
   return 0;
 }
 
@@ -130,7 +124,6 @@ int main(int argc, char** argv)
   return 0;
 }
 
-
 ```
 
 In this example the program initialize the runtime and the add two tasks to it before starting.
@@ -145,17 +138,16 @@ Here is the output:
 
 CRuntime started
 using 1 procs of 2
-hello from the task 1
-hello from the task 2
-hello from the task 1
-hello from the task 2
-hello from the task 1
-hello from the task 2
-hello from the task 1
-hello from the task 2
-hello from the task 1
-hello from the task 2
-
+the answer from task 1 is: 42
+the answer from task 2 is: 69
+the answer from task 1 is: 42
+the answer from task 2 is: 69
+the answer from task 1 is: 42
+the answer from task 2 is: 69
+the answer from task 1 is: 42
+the answer from task 2 is: 69
+the answer from task 1 is: 42
+^C
 
 ```
 
