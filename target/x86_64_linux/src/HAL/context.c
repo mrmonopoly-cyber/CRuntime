@@ -15,8 +15,6 @@ typedef struct{
   Reg r13;
   Reg r14;
   Reg r15;
-
-  Reg rdi;
 }CpuState;
 
 struct __ContextImp{
@@ -36,9 +34,17 @@ static void _panic(void)
   while(1);
 }
 
-static void _task_trampoline(Context* cs)
+static void _task_trampoline(void)
 {
-  struct __ContextImp *ctx = (struct __ContextImp*)cs;
+  struct __ContextImp *ctx = NULL;
+
+  __asm__ volatile(
+      "mov %%rbx, %0"
+      : "=r" (ctx)
+      :
+      : "memory"
+      );
+
   if (ctx) {
     ctx->__action.entry(ctx->__action.arg);
   }
@@ -67,7 +73,7 @@ CRRETURN Context_init(Context* const restrict cs,
   *(--sp) = (void*) (uintptr_t) _task_trampoline;
 
   ctx->__cpu_state.rsp = (Reg) sp;
-  ctx->__cpu_state.rdi = (Reg) ctx;
+  ctx->__cpu_state.rbx = (Reg) ctx;
 
   return OK();
 }
@@ -84,7 +90,6 @@ void __attribute__((__naked__)) Context_switch(
       "mov %r13, 32(%rdi)\n"
       "mov %r14, 40(%rdi)\n"
       "mov %r15, 48(%rdi)\n"
-      "mov %rdi, 56(%rdi)\n"
 
       "mov  0(%rsi), %rbx\n" 
       "mov  8(%rsi), %rsp\n"
@@ -93,7 +98,6 @@ void __attribute__((__naked__)) Context_switch(
       "mov 32(%rsi), %r13\n"
       "mov 40(%rsi), %r14\n"
       "mov 48(%rsi), %r15\n"
-      "mov 56(%rsi), %rdi\n"
 
       "ret"
       );
