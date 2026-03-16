@@ -24,6 +24,8 @@ Below an example on how to use the library:
 > The following example assumes that a valid deployment is available
 
 ```c
+
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -33,30 +35,32 @@ Below an example on how to use the library:
 char task_stack_1[16384]__attribute__((__aligned__(16)));
 char task_stack_2[16384]__attribute__((__aligned__(16)));
 
-int task_f_1(void* in, void* env)
+int task_f_1(void* in)
 {
+  int answer = (int)(uintptr_t)in;
+
   UNUSED(in);
-  UNUSED(env);
 
   for(int a=0;a<5;a++)
   {
-    printf("hello from the task 1\n");
-    CRuntime_yield(env);
+    printf("the answer from task 1 is: %d\n", answer);
+    CRuntime_yield();
     sleep(1);
   }
 
   return 0;
 }
 
-int task_f_2(void* in, void* env)
+int task_f_2(void* in)
 {
+  int answer = (int)(uintptr_t)in;
+
   UNUSED(in);
-  UNUSED(env);
 
   for(int a=0;a<5;a++)
   {
-    printf("hello from the task 2\n");
-    CRuntime_yield(env);
+    printf("the answer from task 1 is: %d\n", answer);
+    CRuntime_yield();
     sleep(1);
   }
 
@@ -88,7 +92,7 @@ int main(int argc, char** argv)
   CRESULT_ERR_MATCH(CRuntime_add_task(
         &runtime,
         task_f_1,
-        NULL,
+        (void*)(uintptr_t)42,
         INIT_STATIC_STACK(task_stack_1)),
       err,{
         printf("error add task_f_1: %s\n", err.description);
@@ -99,7 +103,7 @@ int main(int argc, char** argv)
   CRESULT_ERR_MATCH(CRuntime_add_task(
         &runtime,
         task_f_2,
-        NULL,
+        (void*)(uintptr_t)69,
         INIT_STATIC_STACK(task_stack_2)),
       err,{
         printf("error add task_f_2: %s\n", err.description);
