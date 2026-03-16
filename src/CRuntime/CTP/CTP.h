@@ -10,6 +10,7 @@
  * \date 2026
  */
 
+#include <stdatomic.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -32,6 +33,7 @@ typedef struct{
 }CTPCaller;
 
 typedef struct CTaskPool{
+  atomic_flag lock; //FIXME: for now, looking for better solution
   CSQ exec_queue[CR_MAX_NUM_OF_CORES];
   CTask list[CTP_CAPACITY];
   size_t active_cores;

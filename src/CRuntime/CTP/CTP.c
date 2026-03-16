@@ -36,7 +36,6 @@ CRRETURN CTP_init(CTP* const restrict self, const size_t num_active_cores)
   return OK();
 }
 
-//FIXME: this function is not thread safe
 CRRETURN CTP_add_task(CTP* const restrict self, const CTaskDescription task)
 {
   assert(self);
@@ -52,6 +51,8 @@ CRRETURN CTP_add_task(CTP* const restrict self, const CTaskDescription task)
     .entry = _task_trampoline,
     .arg = NULL,
   };
+
+  while(!atomic_flag_test_and_set(&self->lock)); //FIXME: horrible
 
   //INFO: inefficient
   for(size_t i=0; i<self->active_cores; i++)
@@ -95,6 +96,8 @@ CRRETURN CTP_add_task(CTP* const restrict self, const CTaskDescription task)
       break;
     }
   }
+
+  atomic_flag_clear(&self->lock);
 
   return OK();
 }
