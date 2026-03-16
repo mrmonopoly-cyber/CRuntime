@@ -32,6 +32,7 @@ typedef struct{
   Context ctx;
   Context* caller;
   TaskEntry entry;
+  void* arg;
 }CTask;
 
 typedef struct{

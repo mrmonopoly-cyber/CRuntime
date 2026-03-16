@@ -11,7 +11,7 @@ static int _task_trampoline(void* arg1)
 
   if (task)
   {
-    task->entry(task->ctx.__action.arg);
+    task->entry(task->arg);
   }
   task->entry = NULL;
   Context_switch(&task->ctx, task->caller);
@@ -75,6 +75,7 @@ CRRETURN CTP_add_task(CTP* const restrict self, const CTaskDescription task)
     {
       p_task = &self->list[i];
       p_task->entry = task.entry;
+      p_task->arg = task.arg;
 
       action.arg = p_task;
 

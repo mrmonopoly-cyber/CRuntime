@@ -147,9 +147,3 @@ CRuntime_terminate(CRuntime* const restrict self)
   TODO();
   return OK();
 }
-
-__attribute__((__naked__))
-void CRuntime_yield(void)
-{
-  __asm__ volatile("jmp yield_real\n\r");
-}

@@ -95,5 +95,4 @@ CRRETURN CRuntime_terminate(CRuntime* const restrict self);
  *
  * @param env environment about the scheduler, it's given to the task by the runtime itself
  */
-__attribute__((__naked__))
-void CRuntime_yield(void);
+#define CRuntime_yield() yield_real()

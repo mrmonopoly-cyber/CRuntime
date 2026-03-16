@@ -16,7 +16,7 @@ int task_f_1(void* in)
 
   for(int a=0;a<5;a++)
   {
-    printf("hello from the task 1: %d\n", answer);
+    printf("the answer from task 1 is: %d\n", answer);
     CRuntime_yield();
     sleep(1);
   }
@@ -32,7 +32,7 @@ int task_f_2(void* in)
 
   for(int a=0;a<5;a++)
   {
-    printf("hello from the task 2: %d\n", answer);
+    printf("the answer from task 1 is: %d\n", answer);
     CRuntime_yield();
     sleep(1);
   }
@@ -44,7 +44,6 @@ int task_f_2(void* in)
 int main(int argc, char** argv)
 {
   CRuntime runtime = {0};
-  uintptr_t answer = 42;
   printf("CRuntime started\n");
 
   size_t active_procs = 1;
@@ -66,7 +65,7 @@ int main(int argc, char** argv)
   CRESULT_ERR_MATCH(CRuntime_add_task(
         &runtime,
         task_f_1,
-        (void*)(uintptr_t)answer,
+        (void*)(uintptr_t)42,
         INIT_STATIC_STACK(task_stack_1)),
       err,{
         printf("error add task_f_1: %s\n", err.description);
@@ -77,7 +76,7 @@ int main(int argc, char** argv)
   CRESULT_ERR_MATCH(CRuntime_add_task(
         &runtime,
         task_f_2,
-        (void*)(uintptr_t)answer,
+        (void*)(uintptr_t)69,
         INIT_STATIC_STACK(task_stack_2)),
       err,{
         printf("error add task_f_2: %s\n", err.description);
