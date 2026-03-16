@@ -27,7 +27,7 @@ WARNING("using default CSQ_CAPACITY")
 
 #define CSQ_CAPACITY (1<<CSQ_CAPACITY_EXP)
 
-typedef int (*TaskEntry) (void* input, void* env);
+typedef int (*TaskEntry) (void* input);
 typedef struct{
   Context ctx;
   Context* caller;

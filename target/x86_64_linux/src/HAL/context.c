@@ -8,13 +8,7 @@
 
 typedef uint64_t Reg;
 typedef struct{
-  Reg rbx;
   Reg rsp;
-  Reg rbp;
-  Reg r12;
-  Reg r13;
-  Reg r14;
-  Reg r15;
 }CpuState;
 
 struct __ContextImp{
@@ -30,7 +24,7 @@ static_assert(_Alignof(struct __ContextImp) == _Alignof(Context), "context types
 static void _panic(void) __attribute__((noreturn));
 static void _panic(void)
 {
-  printf("panic\n");
+  printf("context panic\n");
   while(1);
 }
 
@@ -38,12 +32,7 @@ static void _task_trampoline(void)
 {
   struct __ContextImp *ctx = NULL;
 
-  __asm__ volatile(
-      "mov %%rbx, %0"
-      : "=r" (ctx)
-      :
-      : "memory"
-      );
+  __asm__ volatile("mov %%r15, %0": "=r" (ctx));
 
   if (ctx) {
     ctx->__action.entry(ctx->__action.arg);
@@ -69,36 +58,64 @@ CRRETURN Context_init(Context* const restrict cs,
   sp_addr = sp_addr & ~0xF; //rsp % 16 == 8
 
   sp = (void**) sp_addr;
+
   *(--sp) = (void*) (uintptr_t) _panic;
   *(--sp) = (void*) (uintptr_t) _task_trampoline;
+  *(--sp) = 0;            //rbx
+  *(--sp) = 0;            //rbp
+  *(--sp) = 0;            //r11
+  *(--sp) = 0;            //r12
+  *(--sp) = 0;            //r13
+  *(--sp) = 0;            //r14
+  *(--sp) = ctx;          //r15
 
   ctx->__cpu_state.rsp = (Reg) sp;
-  ctx->__cpu_state.rbx = (Reg) ctx;
 
   return OK();
 }
 
 void __attribute__((__naked__)) Context_switch(
-    Context* const restrict old_cs __attribute__((__unused__)),
+    struct __Context* const restrict old_cs __attribute__((__unused__)),
     const Context* const restrict new_cs __attribute__((__unused__)))
 {
     __asm__ volatile(
-      "mov %rbx,  0(%rdi)\n"
-      "mov %rsp,  8(%rdi)\n"
-      "mov %rbp, 16(%rdi)\n"
-      "mov %r12, 24(%rdi)\n"
-      "mov %r13, 32(%rdi)\n"
-      "mov %r14, 40(%rdi)\n"
-      "mov %r15, 48(%rdi)\n"
+      "push %rbx\n\r"
+      "push %rbp\n\r"
+      "push %r11\n\r"
+      "push %r12\n\r"
+      "push %r13\n\r"
+      "push %r14\n\r"
+      "push %r15\n\r"
 
-      "mov  0(%rsi), %rbx\n" 
-      "mov  8(%rsi), %rsp\n"
-      "mov 16(%rsi), %rbp\n"
-      "mov 24(%rsi), %r12\n"
-      "mov 32(%rsi), %r13\n"
-      "mov 40(%rsi), %r14\n"
-      "mov 48(%rsi), %r15\n"
+      "mov %rsp, (%rdi)\n\r"
+      "mov (%rsi), %rsp\n\r"
+
+      "pop %r15\n\r" 
+      "pop %r14\n\r"
+      "pop %r13\n\r"
+      "pop %r12\n\r"
+      "pop %r11\n\r"
+      "pop %rbp\n\r"
+      "pop %rbx\n\r"
 
       "ret"
       );
+}
+
+/*
+typedef struct{
+  Context ctx;  -> rdi //size 48, offset 0
+  Context* caller; -> rsi //size 8, offset 48
+  TaskEntry entry;
+}CTask;
+ */
+__attribute__((__naked__))
+void yield_real(void)
+{
+    __asm__ inline(
+        "mov %r15, %rdi\n\r"
+        "mov 48(%r15), %rsi\n\t"  /* rsi = env->caller */
+        "call Context_switch\n\r"
+        "ret\n\r"
+        );
 }

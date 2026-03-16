@@ -9,8 +9,9 @@ static int _task_trampoline(void* arg1)
 {
   CTask* task = (CTask*)arg1;
 
-  if (task) {
-    task->entry(task->ctx.__action.arg, task);
+  if (task)
+  {
+    task->entry(task->ctx.__action.arg);
   }
   task->entry = NULL;
   Context_switch(&task->ctx, task->caller);

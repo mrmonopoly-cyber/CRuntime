@@ -49,10 +49,7 @@ static bool _compile_files(Walk_Entry entry)
     cmd_append(&cmd, "-DTHREAD_MEM_INFO_SIZE=56");
     cmd_append(&cmd, "-DTHREAD_MEM_INFO_ALIGNEMENT=8");
 
-    cmd_append(&cmd, "-DCR_CONTEXT_SIZE=64");
-    cmd_append(&cmd, "-DCR_CONTEXT_ALIGNEMENT=16");
-
-    cmd_append(&cmd, "-DCR_CONTEXT_SIZE=64");
+    cmd_append(&cmd, "-DCR_CONTEXT_SIZE=8");
     cmd_append(&cmd, "-DCR_CONTEXT_ALIGNEMENT=16");
 
     COMP_VERBOSE cmd_append(&cmd, "-DVERBOSE");

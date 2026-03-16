@@ -74,3 +74,12 @@ CRRETURN Context_init(Context* const restrict cs,
  */
 __attribute__((__naked__))
 void Context_switch(Context* const restrict old_cs, const Context* const restrict new_cs);
+
+/**
+ * \brief get the env and perform the context switch
+ *
+ * \important this function is called only inside of a task
+ *
+ */
+__attribute__((__naked__))
+void yield_real(void);

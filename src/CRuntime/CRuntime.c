@@ -148,8 +148,8 @@ CRuntime_terminate(CRuntime* const restrict self)
   return OK();
 }
 
-void CRuntime_yield(void* env)
+__attribute__((__naked__))
+void CRuntime_yield(void)
 {
-  CTask* task = (CTask*) env;
-  Context_switch(&task->ctx, task->caller);
+  __asm__ volatile("jmp yield_real\n\r");
 }
