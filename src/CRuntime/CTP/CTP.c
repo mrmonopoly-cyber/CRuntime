@@ -1,4 +1,5 @@
 #include "CTP.h"
+#include "CRuntime/common/errors/errors.h"
 
 #include <assert.h>
 #include <stdatomic.h>
@@ -66,6 +67,14 @@ CRRETURN CTP_add_task(CTP* const restrict self, const CTaskDescription task)
     {
       best = i;
     }
+  }
+
+  if (new_size >= CSQ_CAPACITY)
+  {
+    //HACK: this approach is incorrect since i should still be able to add the task
+    //in the general queue, but for now until i figure a better way to store tasks it will
+    //prevent errors
+    return ERR(CR_STATUS_ERR_FULL, "all workers are full, task cannot be added");
   }
 
 
