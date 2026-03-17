@@ -9,7 +9,40 @@ the context switch witch does use a bit of inline assembly.
 
 # Build
 
-To build the deployment you just need to compile the build script once with the following
+To build a deployment release for this target you just need to execute the following commands:
+
+```sh
+
+gcc nob.c -o nob
+./nob
+
+
+```
+
+Output in `out` dir:
+
+```sh
+
+# tree -L 1 out
+out
+├── CR.a
+├── CR.o
+├── CR.so
+├── Include
+└── lib
+
+3 directories, 3 files
+
+
+```
+
+# Examples
+
+There are a few examples that you can use to better understand the library. 
+To check them look into the `Examples` directory.
+For all of them the following process is true.
+
+To build the example you just need to compile the build script once with the following
 command:
 
 ```sh
@@ -19,7 +52,7 @@ gcc nob.c -o nob
 
 ```
 
-now **nob** has an integrated, minimal, CLI which can be seen with the following command:
+**nob** has an integrated, minimal, CLI which can be seen with the following command:
 
 
 ```sh
@@ -30,9 +63,19 @@ now **nob** has an integrated, minimal, CLI which can be seen with the following
 ```
 
 To build the project just run **nob**:
+
 ```sh
 
 ./nob
+
+
+```
+
+To run the executable just run **nob**:
+
+```sh
+
+./main
 
 
 ```
