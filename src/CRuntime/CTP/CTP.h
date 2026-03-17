@@ -22,10 +22,12 @@
 
 #include "CSQ/CSQ.h"
 
-#if !defined(CTP_CAPACITY)
-#define CTP_CAPACITY 64
-WARNING("default value for CTP_CAPACITY")
-#endif /* !defined(CTP_CAPACITY) */
+#ifdef CTP_CAPACITY
+#errors "CTP_CAPACITY is for internal use and cannot be redefined"
+#else
+#define CTP_CAPACITY (CSQ_CAPACITY * CR_MAX_NUM_OF_CORES)
+#endif // CTP_CAPACITY
+
 
 typedef struct{
   Context* ctx;

@@ -1,5 +1,4 @@
 #include "CTP.h"
-#include "CRuntime/common/errors/errors.h"
 
 #include <assert.h>
 #include <stdatomic.h>
