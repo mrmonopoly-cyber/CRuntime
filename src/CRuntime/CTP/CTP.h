@@ -54,7 +54,6 @@ typedef struct CTaskPool{
     CTask task;
     StackView stack;
   }system_tasks[__NUM_SystemTask];
-  size_t executor_cursor;
 }CTP;
 
 typedef CRESULT_TEMPLATE(CTask*, CRStatus) CTPPopRes;
