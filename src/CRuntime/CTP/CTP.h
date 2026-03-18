@@ -47,7 +47,6 @@ typedef struct{
 }CTPCaller;
 
 typedef struct CTaskPool{
-  CS executor[CR_MAX_NUM_OF_CORES];
   CTaskDescription input_tasks[CTP_MAX_INPUT_TASKS];
   size_t input_tasks_cursor;
   CTask list[CTP_CAPACITY];
@@ -55,7 +54,6 @@ typedef struct CTaskPool{
     CTask task;
     StackView stack;
   }system_tasks[__NUM_SystemTask];
-  size_t active_cores;
   size_t executor_cursor;
 }CTP;
 
@@ -65,9 +63,8 @@ typedef CRESULT_TEMPLATE(CTask*, CRStatus) CTPPopRes;
  * \brief initialize at task pool
  *
  * @param self pointer to a valid uninitialized instance of CTP
- * @param num_active_cores number of active parallel cores in CR_MAX_NUM_OF_CORES
  */
-CRRETURN CTP_init(CTP* const restrict self, const size_t num_active_cores);
+CRRETURN CTP_init(CTP* const restrict self);
 
 /**
  * \brief add a new specialized task in pool

@@ -1,7 +1,4 @@
 #include "CTP.h"
-#include "CRuntime/CTP/CSQ/CSQ.h"
-#include "CRuntime/common/HAL/debug.h"
-#include "CRuntime/common/common.h"
 
 #include <assert.h>
 #include <stdatomic.h>
@@ -37,7 +34,7 @@ static int _system_task_schedule(void* arg)
   return 0;
 }
 
-CRRETURN CTP_init(CTP* const restrict self, const size_t num_active_cores)
+CRRETURN CTP_init(CTP* const restrict self)
 {
   assert(self);
 
@@ -48,13 +45,6 @@ CRRETURN CTP_init(CTP* const restrict self, const size_t num_active_cores)
   };
 
   memset(self, 0, sizeof(*self));
-
-  for (size_t i=0; i<num_active_cores; i++)
-  {
-    TRY(CS_init(&self->executor[i]));
-  }
-
-  self->active_cores = num_active_cores;
 
   self->system_tasks[SystemTask_collect].task = 
     CTask_init(_system_task_collect, NULL, TaskType_System);

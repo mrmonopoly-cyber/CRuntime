@@ -25,6 +25,7 @@
 typedef struct {
   CTP task_pool;
   struct{
+    CS executor;
     StackInfo stack;
     ThreadId id;
   }engines[CR_MAX_NUM_OF_CORES];

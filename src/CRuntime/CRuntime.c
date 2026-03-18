@@ -48,7 +48,7 @@ CRRETURN _CRuntime_init(CRuntime* const restrict self, const CRuntimeInitOpt opt
     return ERR(CR_STATUS_ERR_INVALID_INPUT, "active cores is must be > 0");
   }
 
-  TRY(CTP_init(&self->task_pool, opt.active_cores));
+  TRY(CTP_init(&self->task_pool));
 
   for(size_t i=0;i<opt.active_cores;i++)
   {
@@ -56,6 +56,7 @@ CRRETURN _CRuntime_init(CRuntime* const restrict self, const CRuntimeInitOpt opt
         res,
         {
           self->engines[i].stack = res;
+          TRY(CS_init(&self->engines[i].executor));
         },
         {
           UNUSED(res);
@@ -96,7 +97,7 @@ CRRETURN CRuntime_start_sync(CRuntime* const restrict self)
 
   for(int i=0;i<CR_MAX_NUM_OF_CORES;i++)
   {
-    entry.arg = &self->task_pool.executor[i];
+    entry.arg = &self->engines[i].executor;
     if (self->engines[i].stack.low_addr == NULL)
     {
       //INFO: skip if not really initialized, may be an error or the core has not been activated
