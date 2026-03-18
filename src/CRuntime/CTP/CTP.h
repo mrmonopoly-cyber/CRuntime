@@ -41,11 +41,6 @@ typedef enum{
   __NUM_SystemTask
 }SystemTask;
 
-typedef struct{
-  Context* ctx;
-  size_t core_num;
-}CTPCaller;
-
 typedef struct CTaskPool{
   CTaskDescription input_tasks[CTP_MAX_INPUT_TASKS];
   size_t input_tasks_cursor;
