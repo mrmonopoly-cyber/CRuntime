@@ -100,8 +100,29 @@ static int _system_task_collect(void* arg)
 
 static int _system_task_schedule(void* arg)
 {
-  UNUSED(arg);
-  TODO();
+  CTP* self = (CTP*) arg;
+  CSQPopRes res = {0};
+  CRReturn ret_res ={0};
+  CTask* task = NULL;
+
+  res = CSQ_pop_try(&self->waiting_queue);
+
+  while(CRESULT_IS_OK(res))
+  {
+    task = CRESULT_OK_VAL(res);
+
+    ret_res =
+      CSQ_push_try(&self->executors[self->exec_cursor].world_task_queue[task->type], task);
+    while(CRESULT_IS_ERR(ret_res))
+    {
+      self->exec_cursor = (self->exec_cursor + 1) % self->num_executors;
+      ret_res =
+        CSQ_push_try(&self->executors[self->exec_cursor].world_task_queue[task->type], task);
+    }
+
+
+    res=CSQ_pop_try(&self->waiting_queue);
+  }
   return 0;
 }
 
