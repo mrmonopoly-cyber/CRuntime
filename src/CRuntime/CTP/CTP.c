@@ -1,4 +1,7 @@
 #include "CTP.h"
+#include "CRuntime/CTP/CSQ/CSQ.h"
+#include "CRuntime/common/HAL/debug.h"
+#include "CRuntime/common/common.h"
 
 #include <assert.h>
 #include <stdatomic.h>
@@ -20,18 +23,69 @@ static int _task_trampoline(void* arg1)
   return 0;
 }
 
+static int _system_task_collect(void* arg)
+{
+  UNUSED(arg);
+  TODO();
+  return 0;
+}
+
+static int _system_task_schedule(void* arg)
+{
+  UNUSED(arg);
+  TODO();
+  return 0;
+}
+
 CRRETURN CTP_init(CTP* const restrict self, const size_t num_active_cores)
 {
   assert(self);
+
+  struct __SystemStackInfo* system_stack = NULL;
+  ContextAction action = {
+    .entry = _task_trampoline,
+    .arg = NULL,
+  };
 
   memset(self, 0, sizeof(*self));
 
   for (size_t i=0; i<num_active_cores; i++)
   {
-    TRY(CSQ_init(&self->exec_queue[i]));
+    TRY(CS_init(&self->executor[i]));
   }
 
   self->active_cores = num_active_cores;
+
+  self->system_tasks[SystemTask_collect].task = 
+    CTask_init(_system_task_collect, NULL, TaskType_System);
+
+  self->system_tasks[SystemTask_schedule].task = 
+    CTask_init(_system_task_schedule, NULL, TaskType_System);
+
+  for(SystemTask t=SystemTask_collect; t<__NUM_SystemTask; t++)
+  {
+    system_stack = &self->system_tasks[t];
+
+    action.arg = &system_stack->task;
+    CRESULT_FULL_MATCH(Thread_allocate_memory(),
+        res,{
+          system_stack->stack.start_addr = res.low_addr;
+          system_stack->stack.size = res.size;
+        },
+        {
+          //FIXME: deallocate the old stack
+          TODO("deallocate old memory");
+          return ERR(res.status, res.description);
+        }
+    );
+    CRESULT_ERR_MATCH(Context_init(&system_stack->task.ctx, system_stack->stack, action),
+        err,{
+          //FIXME: deallocate the old stack
+          TODO("deallocate old memory");
+          return ERR(err.status, err.description);
+        }
+    );
+  }
 
   return OK();
 }
@@ -43,69 +97,13 @@ CRRETURN CTP_add_task(CTP* const restrict self, const CTaskDescription task)
   assert(task.stack.start_addr);
   assert(task.stack.size);
 
-  size_t best =0;
-  size_t size =CSQ_size(&self->exec_queue[0]);
-  size_t new_size = 0;
-  CTask* p_task = NULL;
-  ContextAction action ={
-    .entry = _task_trampoline,
-    .arg = NULL,
-  };
-
-  while(!atomic_flag_test_and_set(&self->lock)); //FIXME: horrible
-
-  //INFO: inefficient
-  for(size_t i=0; i<self->active_cores; i++)
+  if (self->input_tasks_cursor >= CTP_MAX_INPUT_TASKS)
   {
-    new_size =CSQ_size(&self->exec_queue[i]);
-    if (!new_size)
-    {
-      best = i;
-      break;
-    }else if(new_size < size)
-    {
-      best = i;
-    }
+    return ERR(CR_STATUS_ERR_FULL, "user input task's lists is full");
   }
 
-  if (new_size >= CSQ_CAPACITY)
-  {
-    //HACK: this approach is incorrect since i should still be able to add the task
-    //in the general queue, but for now until i figure a better way to store tasks it will
-    //prevent errors
-    return ERR(CR_STATUS_ERR_FULL, "all workers are full, task cannot be added");
-  }
-
-
-  //INFO: inefficient
-  for(size_t i=0; i<CTP_CAPACITY; i++)
-  {
-    if (self->list[i].entry == NULL)
-    {
-      p_task = &self->list[i];
-      p_task->entry = task.entry;
-      p_task->arg = task.arg;
-
-      action.arg = p_task;
-
-      CRESULT_ERR_MATCH(Context_init(&p_task->ctx, task.stack, action),
-          err,{
-            memset(p_task, 0, sizeof(*p_task));
-            return ERR(err.status, err.description);
-          }
-      );
-
-      CRESULT_ERR_MATCH(CSQ_push_try(&self->exec_queue[best], p_task),
-          err,{
-            memset(p_task, 0, sizeof(*p_task));
-            return ERR(err.status, err.description);
-          }
-      );
-      break;
-    }
-  }
-
-  atomic_flag_clear(&self->lock);
+  self->input_tasks[self->input_tasks_cursor] = task;
+  self->input_tasks_cursor = (self->input_tasks_cursor+1) % CTP_MAX_INPUT_TASKS;
 
   return OK();
 }

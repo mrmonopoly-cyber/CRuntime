@@ -14,7 +14,10 @@
 #include <CRuntime/common/common.h>
 
 typedef struct CScheduler{
-  CSQ* task_pool;
+  CSQ world_task_queue[__NUM_TaskType];
+  CSQ local_queue;
+  CSQ drain_queue;
+  atomic_size_t load;
   void* idle_task_stack;
   Context idle_ctx;
   Context ctx;
@@ -29,7 +32,7 @@ typedef struct CScheduler{
  *
  * @return look \ref CRStatus for more info
  */
-CRRETURN CS_init(CS* const cs, CSQ* const restrict task_pool);
+CRRETURN CS_init(CS* const cs);
 
 /**
  * \brief synchronously run the executor.

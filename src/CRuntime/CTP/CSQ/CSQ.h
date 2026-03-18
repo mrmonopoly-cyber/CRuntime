@@ -23,9 +23,18 @@
 #if !defined (CSQ_CAPACITY)
 #define CSQ_CAPACITY_EXP 5
 WARNING("using default CSQ_CAPACITY")
-#endif // !defined ()
+#endif // !defined (CSQ_CAPACITY)
 
 #define CSQ_CAPACITY (1<<CSQ_CAPACITY_EXP)
+
+/*!< from 0 (highest priority) to N (lowest priority)*/
+typedef enum
+{
+  TaskType_System=0,
+  TaskType_User,
+
+  __NUM_TaskType,
+}TaskType;
 
 typedef int (*TaskEntry) (void* input);
 typedef struct{
@@ -33,6 +42,7 @@ typedef struct{
   Context* caller;
   TaskEntry entry;
   void* arg;
+  TaskType type;
 }CTask;
 
 typedef struct{
@@ -48,6 +58,8 @@ typedef struct CSQueue{
 }CSQ;
 
 typedef CRESULT_TEMPLATE(CTask*, CRStatus) CSQPopRes;
+
+#define CTask_init(ENTRY, ARG, TYPE) ((CTask){.entry=(ENTRY), .arg=ARG, .type=TYPE})
 
 /**
  * \brief initialize an already allocated CSQ

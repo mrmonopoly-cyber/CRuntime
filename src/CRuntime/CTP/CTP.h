@@ -20,6 +20,8 @@
 #include <CRuntime/common/errors/errors.h>
 #include <CRuntime/common/common.h>
 
+#include <CRuntime/CScheduler/CScheduler.h>
+
 #include "CSQ/CSQ.h"
 
 #ifdef CTP_CAPACITY
@@ -28,6 +30,16 @@
 #define CTP_CAPACITY (CSQ_CAPACITY * CR_MAX_NUM_OF_CORES)
 #endif // CTP_CAPACITY
 
+#ifndef CTP_MAX_INPUT_TASKS
+#define CTP_MAX_INPUT_TASKS 8
+#endif // !CTP_MAX_INPUT_TASKS
+
+typedef enum{
+  SystemTask_collect=0,
+  SystemTask_schedule,
+
+  __NUM_SystemTask
+}SystemTask;
 
 typedef struct{
   Context* ctx;
@@ -35,10 +47,16 @@ typedef struct{
 }CTPCaller;
 
 typedef struct CTaskPool{
-  atomic_flag lock; //FIXME: for now, looking for better solution
-  CSQ exec_queue[CR_MAX_NUM_OF_CORES];
+  CS executor[CR_MAX_NUM_OF_CORES];
+  CTaskDescription input_tasks[CTP_MAX_INPUT_TASKS];
+  size_t input_tasks_cursor;
   CTask list[CTP_CAPACITY];
+  struct __SystemStackInfo{
+    CTask task;
+    StackView stack;
+  }system_tasks[__NUM_SystemTask];
   size_t active_cores;
+  size_t executor_cursor;
 }CTP;
 
 typedef CRESULT_TEMPLATE(CTask*, CRStatus) CTPPopRes;

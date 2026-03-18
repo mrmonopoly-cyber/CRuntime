@@ -13,18 +13,17 @@
 
 int _CS_trampoline(void* in)
 {
-  CS cs ={0};
-  CSQ* csq = (CSQ*)in;
+  CS* cs = (CS*) in;
 
-  if (csq) {
-    CRESULT_ERR_MATCH(CS_init(&cs,csq),
+  if (cs) {
+    CRESULT_ERR_MATCH(CS_init(cs),
         res,{
           TODO("use the error msg in case of failure of CS_init");
           return -res.status;
         }
     );
 
-    CRESULT_ERR_MATCH(CS_run(&cs),
+    CRESULT_ERR_MATCH(CS_run(cs),
         res,{
           TODO("use the error msg in case of failure of CS_run");
           return -res.status;
@@ -97,7 +96,7 @@ CRRETURN CRuntime_start_sync(CRuntime* const restrict self)
 
   for(int i=0;i<CR_MAX_NUM_OF_CORES;i++)
   {
-    entry.arg = &self->task_pool.exec_queue[i];
+    entry.arg = &self->task_pool.executor[i];
     if (self->engines[i].stack.low_addr == NULL)
     {
       //INFO: skip if not really initialized, may be an error or the core has not been activated
