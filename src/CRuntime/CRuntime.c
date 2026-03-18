@@ -1,5 +1,5 @@
 #include "CRuntime.h"
-#include "CRuntime/common/errors/errors.h"
+#include "CRuntime/CTP/CTP.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -48,7 +48,7 @@ CRRETURN _CRuntime_init(CRuntime* const restrict self, const CRuntimeInitOpt opt
     return ERR(CR_STATUS_ERR_INVALID_INPUT, "active cores is must be > 0");
   }
 
-  TRY(CTP_init(&self->task_pool));
+  TRY(CTP_init(&self->task_pool, self->executor, opt.active_cores));
 
   for(size_t i=0;i<opt.active_cores;i++)
   {
@@ -56,7 +56,7 @@ CRRETURN _CRuntime_init(CRuntime* const restrict self, const CRuntimeInitOpt opt
         res,
         {
           self->engines[i].stack = res;
-          TRY(CS_init(&self->engines[i].executor));
+          TRY(CS_init(&self->executor[i]));
         },
         {
           UNUSED(res);
@@ -84,6 +84,11 @@ CRRETURN CRuntime_add_task(
 
   TRY(CTP_add_task(&self->task_pool, desc));
 
+  if(self->running)
+  {
+    TODO("check if the runtime is just waiting and start a system task");
+  }
+
   return OK();
 }
 
@@ -97,7 +102,7 @@ CRRETURN CRuntime_start_sync(CRuntime* const restrict self)
 
   for(int i=0;i<CR_MAX_NUM_OF_CORES;i++)
   {
-    entry.arg = &self->engines[i].executor;
+    entry.arg = &self->executor[i];
     if (self->engines[i].stack.low_addr == NULL)
     {
       //INFO: skip if not really initialized, may be an error or the core has not been activated
@@ -114,6 +119,13 @@ CRRETURN CRuntime_start_sync(CRuntime* const restrict self)
         }
     );
   }
+
+  CRESULT_ERR_MATCH(CTP_bootstrap(&self->task_pool),
+      res,{
+        TODO("manage failure in bootstrap");
+        UNUSED(res);
+      }
+  );
 
   for(int i=0;i<CR_MAX_NUM_OF_CORES;i++)
   {
@@ -135,6 +147,8 @@ CRRETURN CRuntime_start_sync(CRuntime* const restrict self)
     );
   }
 
+  self->running = true;
+
 
   return OK();
 }
@@ -142,7 +156,7 @@ CRRETURN CRuntime_start_sync(CRuntime* const restrict self)
 CRRETURN
 CRuntime_terminate(CRuntime* const restrict self)
 {
-  UNUSED(self);
+  self->running = false;
 
   TODO();
   return OK();

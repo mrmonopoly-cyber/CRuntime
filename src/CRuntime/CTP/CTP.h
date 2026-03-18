@@ -41,14 +41,20 @@ typedef enum{
   __NUM_SystemTask
 }SystemTask;
 
+typedef struct {
+  CTask task;
+  StackView stack;
+  atomic_flag running;
+}SystemTaskInfo;
+
 typedef struct CTaskPool{
   CTaskDescription input_tasks[CTP_MAX_INPUT_TASKS];
   size_t input_tasks_cursor;
+  CSQ waiting_queue;
   CTask list[CTP_CAPACITY];
-  struct __SystemStackInfo{
-    CTask task;
-    StackView stack;
-  }system_tasks[__NUM_SystemTask];
+  SystemTaskInfo system_tasks[__NUM_SystemTask];
+  CS* executors;
+  size_t num_executors;
 }CTP;
 
 typedef CRESULT_TEMPLATE(CTask*, CRStatus) CTPPopRes;
@@ -58,7 +64,7 @@ typedef CRESULT_TEMPLATE(CTask*, CRStatus) CTPPopRes;
  *
  * @param self pointer to a valid uninitialized instance of CTP
  */
-CRRETURN CTP_init(CTP* const restrict self);
+CRRETURN CTP_init(CTP* const restrict self, CS* const executors, const size_t size);
 
 /**
  * \brief add a new specialized task in pool
@@ -71,3 +77,14 @@ CRRETURN CTP_init(CTP* const restrict self);
  * @return return a CResult type. see \ref CRReturn for more info
  */
 CRRETURN CTP_add_task(CTP* const restrict self, CTaskDescription task);
+
+/**
+ * \brief bootstrap the scheduler by executing the system tasks.
+ * \brief useful in the beginning when some tasks have been added but have
+ * \brief nothing has been scheduled yet
+ *
+ * @param self pointer to an initialized task pool
+ *
+ * @return return a CResult type. see \ref CRReturn for more info
+ */
+CRRETURN CTP_bootstrap(CTP* const restrict self);

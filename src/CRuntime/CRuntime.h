@@ -24,11 +24,12 @@
 
 typedef struct {
   CTP task_pool;
+  CS executor[CR_MAX_NUM_OF_CORES];
   struct{
-    CS executor;
     StackInfo stack;
     ThreadId id;
   }engines[CR_MAX_NUM_OF_CORES];
+  bool running;
 }CRuntime;
 
 typedef struct{
