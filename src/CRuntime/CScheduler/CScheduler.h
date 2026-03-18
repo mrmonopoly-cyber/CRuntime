@@ -17,7 +17,6 @@ typedef struct CScheduler{
   CSQ world_task_queue[__NUM_TaskType];
   CSQ local_queue;
   CSQ drain_queue;
-  atomic_size_t load;
   void* idle_task_stack;
   Context idle_ctx;
   Context ctx;

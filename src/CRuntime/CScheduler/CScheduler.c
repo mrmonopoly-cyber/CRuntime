@@ -55,20 +55,6 @@ CRRETURN CS_init(CS* const self)
   return OK();
 }
 
-static inline 
-void _CS_update_load(CS* const restrict self)
-{
-  size_t load=0;
-  load =0;
-  load += CSQ_size(&self->local_queue);
-  load += CSQ_size(&self->drain_queue);
-  for(TaskType t=TaskType_System; t<__NUM_TaskType; t++)
-  {
-    load += CSQ_size(&self->world_task_queue[t]);
-  }
-  atomic_store(&self->load, load);
-}
-
 static
 void _CS_manage_task(CS* const restrict self, CTask* const task)
 {
@@ -101,8 +87,6 @@ CRRETURN CS_run(CS* const restrict self)
 
   while (1)
   {
-    _CS_update_load(self);
-
     CRESULT_OK_MATCH(CSQ_pop_try(&self->world_task_queue[TaskType_System]),
         res,{
           _CS_manage_task(self, res);
