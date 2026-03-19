@@ -6,8 +6,6 @@ This cores can be anything from system level thread to real cpu core.
 Each core independently chooses which tasks to run among the one which has been assigned to it.
 The library is implemented in **C11**, and it does not depend on any external library not even 
 on **glibc**.
-When some functions of the **glibc** are used, they have been forward declared to let the user
-implement them as they like.
 Also a **HAL** has been designed to facilitate the porting on different platform.
 Thanks to all of these the library if completely **freestanding** using **C11**.
 
