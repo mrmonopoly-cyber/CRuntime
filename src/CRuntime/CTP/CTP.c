@@ -136,7 +136,7 @@ CRRETURN CTP_init(CTP* const restrict self, CS* const executors, const size_t si
     .arg = NULL,
   };
 
-  memset(self, 0, sizeof(*self));
+  cr_memset(self, 0, sizeof(*self));
 
   TRY(CSQ_init(&self->waiting_queue));
 

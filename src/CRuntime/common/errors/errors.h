@@ -22,6 +22,7 @@
 #define CR_STATUS_ERR_FULL 5
 #define CR_STATUS_ERR_UNREACHABLE_CODE 6
 #define CR_STATUS_ERR_INVALID_INPUT 7
+#define CR_STATUS_ERR_INIT 8
 
 #define CR_STATUS_ERR_UNKNOWN 99
 
@@ -31,7 +32,7 @@
  * \brief description: description of the error
  */
 typedef struct{
-  uint16_t status;
+  int32_t status;
   const char* description;
 }CRStatus;
 

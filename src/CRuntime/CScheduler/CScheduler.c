@@ -26,7 +26,7 @@ CRRETURN CS_init(CS* const self)
 
   assert(self);
 
-  memset(self, 0, sizeof(*self));
+  cr_memset(self, 0, sizeof(*self));
 
   TRY(CSQ_init(&self->drain_queue));
   TRY(CSQ_init(&self->local_queue));

@@ -7,7 +7,7 @@ CRRETURN CSQ_init(CSQ* const self)
 {
   assert(self);
 
-  memset(self, 0, sizeof(*self));
+  cr_memset(self, 0, sizeof(*self));
 
   atomic_init(&self->read_cursor, 0);
   atomic_init(&self->write_cursor, 0);

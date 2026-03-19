@@ -1,5 +1,4 @@
 #include "CRuntime.h"
-#include "CRuntime/CTP/CTP.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -47,6 +46,13 @@ CRRETURN _CRuntime_init(CRuntime* const restrict self, const CRuntimeInitOpt opt
   {
     return ERR(CR_STATUS_ERR_INVALID_INPUT, "active cores is must be > 0");
   }
+
+  CRESULT_OK_MATCH(_CRLog_init((CRLogOpt){0}),
+      res,{
+        UNUSED(res);
+        TRY(LOG(Trace, "log correctly initialized"));
+      }
+  );
 
   TRY(CTP_init(&self->task_pool, self->executor, opt.active_cores));
 

@@ -4,6 +4,8 @@
 
 #include "errors/errors.h"
 #include "HAL/HAL.h"
+#include "log/log.h"
+#include "utils/utils.h"
 
 
 #define STRINGIFY(X) #X

@@ -10,7 +10,3 @@
  * \author Alberto Damo
  * \date 2026
  */
-
-#include <stddef.h>
-
-void *memset(void *s, int c, size_t n);

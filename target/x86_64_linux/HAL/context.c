@@ -5,6 +5,7 @@
 
 #include <CRuntime/common/common.h>
 #include <CRuntime/common/errors/errors.h>
+#include <string.h>
 
 typedef uint64_t Reg;
 typedef struct{

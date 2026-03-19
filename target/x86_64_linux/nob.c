@@ -143,6 +143,8 @@ static bool _compile_files(Walk_Entry entry)
     cmd_append(&cmd, "-Wextra");
     cmd_append(&cmd, "-std=c11");
     cmd_append(&cmd, "-pedantic");
+    cmd_append(&cmd, "-ffreestanding");
+    cmd_append(&cmd, "-nostdlib");
     if(fpic) cmd_append(&cmd, "-fPIC");
     cmd_append(&cmd, "-I../"ROOT_SRC_DIR"/src");
     cmd_append(&cmd, "-I../"ROOT_SRC_DIR"/"LIB_DIR"/CResult");
