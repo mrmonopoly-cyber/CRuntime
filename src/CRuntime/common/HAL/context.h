@@ -76,10 +76,10 @@ __attribute__((__naked__))
 void Context_switch(Context* const restrict old_cs, const Context* const restrict new_cs);
 
 /**
- * \brief get the env and perform the context switch
+ * \brief get the address of the env of the current executing thread
  *
  * \important this function is called only inside of a task
  *
  */
 __attribute__((__naked__))
-void yield_real(void);
+void* load_env(void);

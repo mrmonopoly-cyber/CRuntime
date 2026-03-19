@@ -104,20 +104,11 @@ void __attribute__((__naked__)) Context_switch(
       );
 }
 
-/*
-typedef struct{
-  Context ctx;  -> rdi //size 48, offset 0
-  Context* caller; -> rsi //size 8, offset 48
-  TaskEntry entry;
-}CTask;
- */
 __attribute__((__naked__))
-void yield_real(void)
+void* load_env(void)
 {
     __asm__ inline(
-        "mov %r15, %rdi\n\r"
-        "mov 48(%r15), %rsi\n\t"  /* rsi = env->caller */
-        "call Context_switch\n\r"
+        "mov %r15, %rax\n\r"
         "ret\n\r"
         );
 }
