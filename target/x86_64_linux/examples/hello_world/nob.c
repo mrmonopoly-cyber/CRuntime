@@ -212,6 +212,12 @@ int main(int argc, char *argv[])
   //building deployment
   set_current_dir(DEP_ROOT);
   NOB_VERBOSE nob_log(INFO, "building deployment");
+  cmd_append(&cmd,"cc");
+  cmd_append(&cmd,"nob.c");
+  cmd_append(&cmd,"-o");
+  cmd_append(&cmd,"nob");
+  if (!cmd_run(&cmd,0)) return err;
+
   cmd_append(&cmd,"./nob");
   for(int i=0; i<argc; i++)
   {
