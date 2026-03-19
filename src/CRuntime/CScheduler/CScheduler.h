@@ -14,9 +14,9 @@
 #include <CRuntime/common/common.h>
 
 typedef struct CScheduler{
-  CSQ world_task_queue[__NUM_TaskType];
+  CSAQ world_task_queue[__NUM_TaskType];
   CSQ local_queue;
-  CSQ drain_queue;
+  CSAQ drain_queue;
   void* idle_task_stack;
   Context idle_ctx;
   Context ctx;

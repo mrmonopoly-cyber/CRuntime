@@ -1,8 +1,4 @@
 #include "CTP.h"
-#include "CResult.h"
-#include "CRuntime/CTP/CSQ/CSQ.h"
-#include "CRuntime/common/HAL/debug.h"
-#include "CRuntime/common/common.h"
 
 #include <assert.h>
 #include <stdatomic.h>
@@ -26,12 +22,12 @@ static int _task_trampoline(void* arg1)
 
 static inline void _drain_executors(CTP* const restrict self)
 {
-  CSQPopRes res = {0};
+  CSAQPopRes res = {0};
 
   for(size_t i=0; i<self->num_executors; i++)
   {
     CS* executor = &self->executors[i];
-    res = CSQ_pop_try(&executor->drain_queue);
+    res = CSAQ_pop_try(&executor->drain_queue);
 
     while(CRESULT_IS_OK(res))
     {
@@ -41,7 +37,7 @@ static inline void _drain_executors(CTP* const restrict self)
             UNUSED(err);
           }
       );
-      res=CSQ_pop_try(&executor->drain_queue);
+      res=CSAQ_pop_try(&executor->drain_queue);
     }
   }
 }
@@ -112,12 +108,12 @@ static int _system_task_schedule(void* arg)
     task = CRESULT_OK_VAL(res);
 
     ret_res =
-      CSQ_push_try(&self->executors[self->exec_cursor].world_task_queue[task->type], task);
+      CSAQ_push_try(&self->executors[self->exec_cursor].world_task_queue[task->type], task);
     while(CRESULT_IS_ERR(ret_res))
     {
       self->exec_cursor = (self->exec_cursor + 1) % self->num_executors;
       ret_res =
-        CSQ_push_try(&self->executors[self->exec_cursor].world_task_queue[task->type], task);
+        CSAQ_push_try(&self->executors[self->exec_cursor].world_task_queue[task->type], task);
     }
 
 
@@ -197,13 +193,13 @@ CRRETURN CTP_add_task(CTP* const restrict self, const CTaskDescription task)
 
 CRRETURN CTP_bootstrap(CTP* const restrict self)
 {
-  TRY(CSQ_push_try(
+  TRY(CSAQ_push_try(
       &self->executors->world_task_queue[TaskType_System],
       &self->system_tasks[SystemTask_collect].task));
 
   while(!atomic_is_lock_free(&self->system_tasks[SystemTask_collect].running));
 
-  TRY(CSQ_push_try(
+  TRY(CSAQ_push_try(
       &self->executors->world_task_queue[TaskType_System],
       &self->system_tasks[SystemTask_schedule].task));
 

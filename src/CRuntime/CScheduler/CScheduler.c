@@ -1,5 +1,4 @@
 #include "CScheduler.h"
-#include "CRuntime/CTP/CSQ/CSQ.h"
 
 #include <assert.h>
 #include <stdatomic.h>
@@ -28,11 +27,11 @@ CRRETURN CS_init(CS* const self)
 
   cr_memset(self, 0, sizeof(*self));
 
-  TRY(CSQ_init(&self->drain_queue));
+  TRY(CSAQ_init(&self->drain_queue));
   TRY(CSQ_init(&self->local_queue));
   for(size_t i=0; i<__NUM_TaskType; i++)
   {
-    TRY(CSQ_init(&self->world_task_queue[i]));
+    TRY(CSAQ_init(&self->world_task_queue[i]));
   }
 
   action.arg = self;
@@ -72,7 +71,7 @@ void _CS_manage_task(CS* const restrict self, CTask* const task)
         }
     );
 
-    CRESULT_ERR_MATCH(CSQ_push_try(&self->drain_queue, task),
+    CRESULT_ERR_MATCH(CSAQ_push_try(&self->drain_queue, task),
         err,{
           UNUSED(err);
           TODO("unable to insert the task nor in the local_queue nor in drain_queue");
@@ -87,7 +86,7 @@ CRRETURN CS_run(CS* const restrict self)
 
   while (1)
   {
-    CRESULT_OK_MATCH(CSQ_pop_try(&self->world_task_queue[TaskType_System]),
+    CRESULT_OK_MATCH(CSAQ_pop_try(&self->world_task_queue[TaskType_System]),
         res,{
           _CS_manage_task(self, res);
           continue;
@@ -103,7 +102,7 @@ CRRETURN CS_run(CS* const restrict self)
 
     for(TaskType t=TaskType_System + 1; t<__NUM_TaskType; t++)
     {
-      CRESULT_OK_MATCH(CSQ_pop_try(&self->world_task_queue[t]),
+      CRESULT_OK_MATCH(CSAQ_pop_try(&self->world_task_queue[t]),
           res,{
             _CS_manage_task(self, res);
             continue;
