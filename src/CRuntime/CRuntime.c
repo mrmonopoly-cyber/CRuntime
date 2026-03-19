@@ -38,14 +38,15 @@ int _CS_trampoline(void* in)
 
 CRRETURN _CRuntime_init(CRuntime* const restrict self, const CRuntimeInitOpt opt)
 {
+  size_t workers = CR_MAX_NUM_OF_CORES;
   CHECK_SELF_INPUT(self);
 
   if (opt.active_cores > CR_MAX_NUM_OF_CORES)
   {
     return ERR(CR_STATUS_ERR_INVALID_INPUT, "active cores is bigger than CR_MAX_NUM_OF_CORES");
-  }else if(opt.active_cores == 0)
+  }else if(opt.active_cores != 0)
   {
-    return ERR(CR_STATUS_ERR_INVALID_INPUT, "active cores is must be > 0");
+    workers = opt.active_cores;
   }
 
 
@@ -71,9 +72,9 @@ CRRETURN _CRuntime_init(CRuntime* const restrict self, const CRuntimeInitOpt opt
       }
   );
 
-  TRY(CTP_init(&self->task_pool, self->executor, opt.active_cores));
+  TRY(CTP_init(&self->task_pool, self->executor, workers));
 
-  for(size_t i=0;i<opt.active_cores;i++)
+  for(size_t i=0;i<workers;i++)
   {
     CRESULT_FULL_MATCH(Thread_allocate_memory(),
         res,

@@ -38,11 +38,6 @@ typedef struct{
 }CRuntimeInitOpt;
 
 /**
- * \brief default values for runtime's parameters
- */
-#define CRUNTIME_DEFAULTS .active_cores = CR_MAX_NUM_OF_CORES,
-
-/**
  * \brief initialize runtime using the stack given by the user.
  * \important it does not start the runtime
  *
