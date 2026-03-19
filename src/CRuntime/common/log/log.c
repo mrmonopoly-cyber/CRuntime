@@ -1,23 +1,30 @@
 #include "log.h"
+#include "CResult.h"
+#include "CRuntime/common/CVAQ/CVAQ.h"
+#include "CRuntime/common/HAL/debug.h"
+#include "CRuntime/common/errors/errors.h"
 
 #include <CRuntime/common/HAL/HAL.h>
+#include <CRuntime/common/utils/utils.h>
+#include <assert.h>
 
 #ifndef NO_LOG
 
-static CRLogger g_default_logger;
+static CRL g_default_logger;
 
 #ifndef MAX_STRING
 #define MAX_STRING 4096
 #endif /* ifndef MAX_STRING */
 
-#define LOG_FILE_BASE_NAME "/CRLog"
+#define LOG_FILE_BASE_NAME "/CRLog_"
 #define LOG_FILE_NAME_INDEX_SPACE "XXX"
 #define LOG_FILE_NAME_EXTRA_PADDING "\0\0\0\0"
 
 CRReturn _CRLog_init(const CRLogOpt opt)
 {
-  CRLogger* self = opt.logger ? opt.logger : &g_default_logger;
+  CRL* self = opt.logger ? opt.logger : &g_default_logger;
   CRReturn err ={0};
+  const size_t num_queues = sizeof(self->data_to_log)/sizeof(self->data_to_log[0]);
   char default_log_file_path[] =
   {
     DEFAULT_LOG_FILE_DIR_PATH
@@ -25,6 +32,13 @@ CRReturn _CRLog_init(const CRLogOpt opt)
     LOG_FILE_NAME_INDEX_SPACE
     LOG_FILE_NAME_EXTRA_PADDING
   };
+
+  cr_memset(self,0 ,sizeof(*self));
+
+  for(size_t i=0; i<num_queues; i++ )
+  {
+    TRY(CVAQ_init(&self->data_to_log[i].data_to_log));
+  }
 
   char* cursor =
     default_log_file_path +
@@ -66,7 +80,7 @@ CRReturn _CRLog_init(const CRLogOpt opt)
       cr_memset(temp_cursor, 0, size);
 
       //appending XXX.log suffix
-      temp_cursor += cr_vsnprintf(temp_cursor, sizeof(default_log_file_path), "%ld.log", log_index);
+      temp_cursor += cr_vsnprintf(temp_cursor, sizeof(default_log_file_path), "%d.log", log_index);
 
       //opening file
       res_open = CR_open_file(default_log_file_path);
@@ -85,8 +99,6 @@ CRReturn _CRLog_init(const CRLogOpt opt)
     self->log_file = CRESULT_OK_VAL(res_open);
   }
 
-  atomic_flag_clear(&self->lock);
-
   return OK();
 
 bad:
@@ -95,16 +107,34 @@ bad:
   return err;
 }
 
-CRRETURN _CRLog(CRLogger* self,
+CRESULT_RETURN(ResPopQueue) _CRLog_get_queue(CRL* rl, const size_t queue_index)
+{
+  CRL* self = rl ? rl : &g_default_logger;
+  const size_t num_queues = sizeof(self->data_to_log)/sizeof(self->data_to_log[0]);
+
+  assert(queue_index < num_queues);
+
+  return CRESULT_T_OK(ResPopQueue, &self->data_to_log[queue_index]);
+}
+
+CRRETURN _CRLog(CRLWorker* self,
     const char* file,
     const size_t line,
     const CRLogLevel level,
     const char* msg)
 {
-  CRLogger* p_self = self;
-  char full_msg[MAX_STRING] = {0};
-  char* cursor = full_msg;
+  const size_t next_free = self->bucket_next_free;
+  LogInfo* log = &self->bucket[next_free];
 
+  if(log->msg[0] != '\0')
+  {
+    return ERR(CR_STATUS_ERR_FULL, "worker's log queue is full");
+  }
+
+  self->bucket_next_free = (next_free +1) % INPUT_LOG_QUEUE_SIZE;
+  char* cursor = log->msg;
+
+  //FIXME: MAX_STRING is wrong
   switch (level)
   {
     case Trace:
@@ -126,23 +156,53 @@ CRRETURN _CRLog(CRLogger* self,
 
   cursor += cr_vsnprintf(cursor, MAX_STRING, "%s.%d: %s\n\r", file, line, msg);
 
-  if(!self)
+
+  return CVAQ_push_try(&self->data_to_log, log);
+}
+
+CRRETURN _CRLog_drain_x(CRL* rl, const size_t log_per_queue)
+{
+  CRL* self = rl ? rl : &g_default_logger;
+  LogInfo* msg= NULL;
+  CLAQ* queue = NULL;
+  const size_t num_queues = sizeof(self->data_to_log)/sizeof(self->data_to_log[0]);
+
+  for(size_t i=0; i<num_queues; i++)
   {
-    p_self = &g_default_logger;
+    for(size_t j=0; j<log_per_queue; j++)
+    {
+      queue = &self->data_to_log[i].data_to_log;
+      CRESULT_FULL_MATCH(CVAQ_pop_try(queue),
+          res_val,
+          {
+            msg  = res_val;
+            CRESULT_ERR_MATCH(CR_write_to_file(self->log_file, msg->msg, cr_strlen(msg->msg)),
+                err,
+                {
+                  UNUSED(err);
+                  TODO("log file write error not managed");
+                }
+            );
+          },
+          {
+            if(res_val.status != CR_STATUS_ERR_EMPTY)
+            {
+              TODO("log file queue pop error unmanaged");
+            }
+            break;
+          }
+      );
+    }
   }
 
-  while(atomic_flag_test_and_set(&p_self->lock));
-  CRESULT_ERR_MATCH(CR_write_to_file(p_self->log_file, full_msg, cr_strlen(full_msg)),
-      err,{
-        atomic_flag_clear(&p_self->lock);
-        return ERR(err.status, err.description);
-      }
-  );
-  atomic_flag_clear(&p_self->lock);
 
   return OK();
 }
 
-CRReturn _CRLog_destroy(CRLogger* self);
+CRReturn _CRLog_destroy(CRL* rl)
+{
+  CRL* self = rl ? rl : &g_default_logger;
+  return CR_close_file(self->log_file);
+}
 
 #endif //!NO_LOG

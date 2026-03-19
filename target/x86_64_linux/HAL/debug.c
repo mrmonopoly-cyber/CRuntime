@@ -1,3 +1,4 @@
+#include "CRuntime/common/errors/errors.h"
 #include <CRuntime/common/HAL/debug.h>
 
 #include <stdint.h>
@@ -35,5 +36,11 @@ CRRETURN CR_write_to_file(void* file, const char* msg, const size_t size)
     return  ERR(CR_STATUS_ERR_UNKNOWN, "not all bytes has been written");
   }
 
+  return OK();
+}
+
+CRRETURN CR_close_file(void* file)
+{
+  close((int)(uintptr_t)file);
   return OK();
 }

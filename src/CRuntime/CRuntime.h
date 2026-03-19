@@ -25,6 +25,7 @@
 typedef struct {
   CTP task_pool;
   CS executor[CR_MAX_NUM_OF_CORES];
+  CRLWorker* log_queue;
   struct{
     StackInfo stack;
     ThreadId id;

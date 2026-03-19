@@ -24,3 +24,5 @@ typedef CRESULT_TEMPLATE(void*, CRStatus) CROpenFile;
 CRESULT_RETURN(CROpenFile) CR_open_file(const char* path);
 
 CRRETURN CR_write_to_file(void* file, const char* msg, const size_t size);
+
+CRRETURN CR_close_file(void* file);

@@ -213,6 +213,10 @@ int main(int argc, char *argv[])
   set_current_dir(DEP_ROOT);
   NOB_VERBOSE nob_log(INFO, "building deployment");
   cmd_append(&cmd,"./nob");
+  for(int i=0; i<argc; i++)
+  {
+    cmd_append(&cmd,argv[i]);
+  }
   if (!cmd_run(&cmd,0)) return err;
   set_current_dir(root);
 
