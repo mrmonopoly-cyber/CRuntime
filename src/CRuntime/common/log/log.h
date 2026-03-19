@@ -70,8 +70,7 @@ typedef CRESULT_TEMPLATE(CRLWorker*, CRStatus) ResPopQueue;
 #ifndef NO_LOG
 CRReturn _CRLog_init(const CRLogOpt opt);
 
-CRESULT_RETURN(ResPopQueue) _CRLog_get_queue(CRL* self, const size_t queue_index);
-#define CRlog_get_queue(queue_index) _CRLog_get_queue(NULL, queue_index)
+CRESULT_RETURN(ResPopQueue) CRLog_get_queue(CRL* self, const size_t queue_index);
 
 CRRETURN _CRLog(CRLWorker* self,
     const char* file,
@@ -80,18 +79,15 @@ CRRETURN _CRLog(CRLWorker* self,
     const char* msg);
 #define LOG(LOG, LEV, MSG) _CRLog(LOG, __FILE__, __LINE__, (LEV), (MSG))
 
-void _CRLog_drain_x(CRL* self, const size_t log_per_queue);
-#define CRLog_drain_x(NUM) _CRLog_drain_x(NULL, (NUM))
+void CRLog_drain_x(CRL* self, const size_t log_per_queue);
 
-CRReturn _CRLog_destroy(CRL* self);
-#define CRLog_destroy() _CRLog_destroy(NULL)
+CRReturn CRLog_destroy(CRL* self);
 #else
 #define CRLog_init(path)
 
 #define CRlog_get_queue(queue_index)
 
-#define LOG(LEV, MSG)
-#define MY_LOG(LOG, LEV, MSG)
+#define LOG(LOG, LEV, MSG)
 
 CRReturn _CRLog_destroy()
 #endif // !NO_LOG

@@ -10,6 +10,7 @@
  * \date 2026
  */
 
+#include "CRuntime/CCTX/CCTX.h"
 #include <CRuntime/common/errors/errors.h>
 #include <CRuntime/common/utils/utils.h>
 #include <CRuntime/common/HAL/HAL.h>
@@ -60,17 +61,18 @@ typedef struct CScheduler{
   Context idle_ctx;
   Context ctx;
   Context* active_ctx;
+  CCTX* cr_ctx;
 }CS;
 
 /**
  * \brief initialize the memory for the executor
  *
  * @param cs pointer to the executor
- * @param task_pool ptr to an already initialized task pool
+ * @param cr_ctx pointer to runtime context
  *
  * @return look \ref CRStatus for more info
  */
-CRRETURN CS_init(CS* const cs);
+CRRETURN CS_init(CS* const cs, CCTX* cr_ctx);
 
 /**
  * \brief synchronously run the executor.

@@ -105,7 +105,7 @@ bad:
   return err;
 }
 
-CRESULT_RETURN(ResPopQueue) _CRLog_get_queue(CRL* rl, const size_t queue_index)
+CRESULT_RETURN(ResPopQueue) CRLog_get_queue(CRL* rl, const size_t queue_index)
 {
   CRL* self = rl ? rl : &g_default_logger;
   const size_t num_queues = sizeof(self->data_to_log)/sizeof(self->data_to_log[0]);
@@ -158,7 +158,7 @@ CRRETURN _CRLog(CRLWorker* self,
   return CVAQ_push_try(&self->data_to_log, log);
 }
 
-void _CRLog_drain_x(CRL* rl, const size_t log_per_queue)
+void CRLog_drain_x(CRL* rl, const size_t log_per_queue)
 {
   CRL* self = rl ? rl : &g_default_logger;
   LogInfo* msg= NULL;
@@ -197,9 +197,10 @@ void _CRLog_drain_x(CRL* rl, const size_t log_per_queue)
       );
     }
   }
+
 }
 
-CRReturn _CRLog_destroy(CRL* rl)
+CRReturn CRLog_destroy(CRL* rl)
 {
   CRL* self = rl ? rl : &g_default_logger;
   return CR_close_file(self->log_file);

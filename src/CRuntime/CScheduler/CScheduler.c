@@ -14,7 +14,7 @@ int idle_task(void* in)
 
   while (self)
   {
-    CRLog_drain_x(1);
+    CRLog_drain_x(self->cr_ctx->logger, 1);
     Context_switch(self->active_ctx, &self->ctx);
   }
 
@@ -22,13 +22,15 @@ int idle_task(void* in)
   while(1);
 }
 
-CRRETURN CS_init(CS* const self)
+CRRETURN CS_init(CS* const self, CCTX* cr_ctx)
 {
   ContextAction action ={0};
 
   assert(self);
 
   cr_memset(self, 0, sizeof(*self));
+
+  self->cr_ctx = cr_ctx;
 
   TRY(CVAQ_init(&self->drain_queue));
   TRY(CVQ_init(&self->local_queue));

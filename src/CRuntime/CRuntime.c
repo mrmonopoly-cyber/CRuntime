@@ -15,14 +15,8 @@ int _CS_trampoline(void* in)
 {
   CS* cs = (CS*) in;
 
-  if (cs) {
-    CRESULT_ERR_MATCH(CS_init(cs),
-        res,{
-          TODO("use the error msg in case of failure of CS_init");
-          return -res.status;
-        }
-    );
-
+  if (cs)
+  {
     CRESULT_ERR_MATCH(CS_run(cs),
         res,{
           TODO("use the error msg in case of failure of CS_run");
@@ -49,18 +43,18 @@ CRRETURN _CRuntime_init(CRuntime* const restrict self, const CRuntimeInitOpt opt
     workers = opt.active_cores;
   }
 
+  self->ctx.logger = opt.logger_init_opt.logger;
 
-  //TODO: not allowing custom logger, for now ok, to add
-  CRESULT_FULL_MATCH(_CRLog_init((CRLogOpt){0}),
+  CRESULT_FULL_MATCH(_CRLog_init(opt.logger_init_opt),
       res,
       {
         UNUSED(res);
-        CRESULT_FULL_MATCH(CRlog_get_queue(CR_MAX_NUM_OF_CORES),
+        CRESULT_FULL_MATCH(CRLog_get_queue(self->ctx.logger, CR_MAX_NUM_OF_CORES),
             res,
             {
               self->log_queue = res;
               TRY(LOG(self->log_queue, Trace, "log correctly initialized"));
-              CRLog_drain_x(1);
+              CRLog_drain_x(self->ctx.logger, 1);
             },
             {
               return ERR(res.status, res.description);
@@ -80,7 +74,7 @@ CRRETURN _CRuntime_init(CRuntime* const restrict self, const CRuntimeInitOpt opt
         res,
         {
           self->engines[i].stack = res;
-          TRY(CS_init(&self->executor[i]));
+          TRY(CS_init(&self->executor[i], &self->ctx));
         },
         {
           UNUSED(res);

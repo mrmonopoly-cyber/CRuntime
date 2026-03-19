@@ -21,11 +21,13 @@
 #include <CRuntime/common/HAL/context.h>
 #include <CRuntime/common/common.h>
 #include <CRuntime/CTP/CTP.h>
+#include <CRuntime/CCTX/CCTX.h>
 
 typedef struct {
   CTP task_pool;
   CS executor[CR_MAX_NUM_OF_CORES];
   CRLWorker* log_queue;
+  CCTX ctx;
   struct{
     StackInfo stack;
     ThreadId id;
@@ -35,6 +37,7 @@ typedef struct {
 
 typedef struct{
   const size_t active_cores; /*!< num of usable cores of CR_MAX_NUM_OF_CORES*/
+  CRLogOpt logger_init_opt;
 }CRuntimeInitOpt;
 
 /**
