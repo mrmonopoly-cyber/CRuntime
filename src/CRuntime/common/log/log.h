@@ -80,7 +80,7 @@ CRRETURN _CRLog(CRLWorker* self,
     const char* msg);
 #define LOG(LOG, LEV, MSG) _CRLog(LOG, __FILE__, __LINE__, (LEV), (MSG))
 
-CRRETURN _CRLog_drain_x(CRL* self, const size_t log_per_queue);
+void _CRLog_drain_x(CRL* self, const size_t log_per_queue);
 #define CRLog_drain_x(NUM) _CRLog_drain_x(NULL, (NUM))
 
 CRReturn _CRLog_destroy(CRL* self);

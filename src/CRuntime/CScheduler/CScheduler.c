@@ -3,6 +3,8 @@
 #include <assert.h>
 #include <stdatomic.h>
 
+#include <CRuntime/common/log/log.h>
+
 #define CHECK_CS_INPUT(cs) \
   if (!cs) return ERR(CR_STATUS_ERR_INVALID_INPUT, "CS_init: cs ptr is null")
 
@@ -12,6 +14,7 @@ int idle_task(void* in)
 
   while (self)
   {
+    CRLog_drain_x(1);
     Context_switch(self->active_ctx, &self->ctx);
   }
 

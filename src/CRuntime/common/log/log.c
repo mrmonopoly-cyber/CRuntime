@@ -1,16 +1,14 @@
 #include "log.h"
-#include "CResult.h"
-#include "CRuntime/common/CVAQ/CVAQ.h"
-#include "CRuntime/common/HAL/debug.h"
-#include "CRuntime/common/errors/errors.h"
 
 #include <CRuntime/common/HAL/HAL.h>
 #include <CRuntime/common/utils/utils.h>
 #include <assert.h>
+#include <stdatomic.h>
 
 #ifndef NO_LOG
 
 static CRL g_default_logger;
+static atomic_flag g_draining;
 
 #ifndef MAX_STRING
 #define MAX_STRING 4096
@@ -160,12 +158,17 @@ CRRETURN _CRLog(CRLWorker* self,
   return CVAQ_push_try(&self->data_to_log, log);
 }
 
-CRRETURN _CRLog_drain_x(CRL* rl, const size_t log_per_queue)
+void _CRLog_drain_x(CRL* rl, const size_t log_per_queue)
 {
   CRL* self = rl ? rl : &g_default_logger;
   LogInfo* msg= NULL;
   CLAQ* queue = NULL;
   const size_t num_queues = sizeof(self->data_to_log)/sizeof(self->data_to_log[0]);
+
+  if(atomic_flag_test_and_set(&g_draining))
+  {
+    return;
+  }
 
   for(size_t i=0; i<num_queues; i++)
   {
@@ -194,9 +197,6 @@ CRRETURN _CRLog_drain_x(CRL* rl, const size_t log_per_queue)
       );
     }
   }
-
-
-  return OK();
 }
 
 CRReturn _CRLog_destroy(CRL* rl)

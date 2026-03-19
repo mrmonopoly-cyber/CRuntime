@@ -59,7 +59,7 @@ CRRETURN _CRuntime_init(CRuntime* const restrict self, const CRuntimeInitOpt opt
             {
               self->log_queue = res;
               TRY(LOG(self->log_queue, Trace, "log correctly initialized"));
-              TRY(CRLog_drain_x(1));
+              CRLog_drain_x(1);
             },
             {
               return ERR(res.status, res.description);
