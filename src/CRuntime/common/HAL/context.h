@@ -12,7 +12,7 @@
 
 #include <stddef.h>
 
-#include <CRuntime/common/common.h>
+#include <CRuntime/common/errors/errors.h>
 
 #ifndef CR_CONTEXT_SIZE
 #error "context size has not been defined, to define it define CR_CONTEXT_SIZE globally using -DCR_CONTEXT_SIZE=[context size]"

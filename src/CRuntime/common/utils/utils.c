@@ -94,6 +94,7 @@ int cr_vsnprintf(char* buf, size_t size, const char* fmt, ...)
           break;
         }
         goto cs_vsnprintf_defaut;
+        break;
       case 'u':
         if(next_fmt)
         {
@@ -105,7 +106,7 @@ int cr_vsnprintf(char* buf, size_t size, const char* fmt, ...)
           break;
         }
         goto cs_vsnprintf_defaut;
-
+        break;
       case 'x':
         if(next_fmt)
         {
@@ -117,6 +118,7 @@ int cr_vsnprintf(char* buf, size_t size, const char* fmt, ...)
           break;
         }
         goto cs_vsnprintf_defaut;
+        break;
       case 'c':
         if(next_fmt)
         {
@@ -126,6 +128,8 @@ int cr_vsnprintf(char* buf, size_t size, const char* fmt, ...)
           next_fmt = false;
           break;
         }
+        goto cs_vsnprintf_defaut;
+        break;
       case 's':
         if(next_fmt)
         {
@@ -139,6 +143,7 @@ int cr_vsnprintf(char* buf, size_t size, const char* fmt, ...)
           break;
         }
         goto cs_vsnprintf_defaut;
+        break;
       default:
 cs_vsnprintf_defaut:
         *(s++) = in_c;

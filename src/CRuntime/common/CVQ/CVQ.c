@@ -1,8 +1,10 @@
-#include "CSQ.h"
+#include "CVQ.h"
 
 #include <assert.h>
 
-CRRETURN CSQ_init(CSQ* const self)
+#include <CRuntime/common/utils/utils.h>
+
+CRRETURN _CVQ_init(CVQ* const self)
 {
   assert(self);
 
@@ -11,13 +13,14 @@ CRRETURN CSQ_init(CSQ* const self)
   return OK();
 }
 
-CRRETURN CSQ_push_try(CSQ* const self, CTask* const task)
+CRRETURN _CVQ_push_try(CVQ* const self, const size_t size, void* const task)
 {
   assert(self);
   assert(task);
 
   size_t write = self->write_cursor;
-  write = (write+1) & (CSQ_CAPACITY-1);
+
+  write = (write+1) & (size -1);
 
   if (write != self->read_cursor)
   {
@@ -26,28 +29,28 @@ CRRETURN CSQ_push_try(CSQ* const self, CTask* const task)
     return OK();
   }
 
-  return ERR(CR_STATUS_ERR_FULL, "CSQ queue full");
+  return ERR(CR_STATUS_ERR_FULL, "CVQ queue full");
 }
 
-CRESULT_RETURN(CSQPopRes) CSQ_pop_try(CSQ* const self)
+CRESULT_RETURN(CVQPopRes) _CVQ_pop_try(CVQ* const self, const size_t size)
 {
   assert(self);
 
   size_t read = self->read_cursor;
-  CTask* p_task = self->list[read];
+  void* p_task = self->list[read];
 
   if (read != self->write_cursor)
   {
-    read = (read+1) & (CSQ_CAPACITY-1);
+    read = (read+1) & (size -1);
     p_task = self->list[read];
     self->read_cursor = read;
-    return CRESULT_T_OK(CSQPopRes, p_task);
+    return CRESULT_T_OK(CVQPopRes, p_task);
   }
 
-  return CRESULT_T_ERR(CSQPopRes, ((CRStatus) {CR_STATUS_ERR_EMPTY, "CSQ queue empty"}));
+  return CRESULT_T_ERR(CVQPopRes, ((CRStatus) {CR_STATUS_ERR_EMPTY, "CVQ queue empty"}));
 }
 
-size_t CSQ_size(const CSQ* const self)
+size_t _CVQ_size(const CVQ* const self, const size_t size)
 {
   assert(self);
 
@@ -57,7 +60,7 @@ size_t CSQ_size(const CSQ* const self)
   if(write < read)
   {
     read -= write;
-    return CSQ_CAPACITY - read;
+    return size - read;
   }
   return read ? write - (read - 1) : write - read;
 }

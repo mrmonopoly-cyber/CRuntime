@@ -18,11 +18,8 @@
 
 #include <CRuntime/common/HAL/context.h>
 #include <CRuntime/common/errors/errors.h>
-#include <CRuntime/common/common.h>
 
 #include <CRuntime/CScheduler/CScheduler.h>
-
-#include "CSQ/CSQ.h"
 
 #ifdef CTP_CAPACITY
 #errors "CTP_CAPACITY is for internal use and cannot be redefined"
@@ -33,6 +30,7 @@
 #ifndef CTP_MAX_INPUT_TASKS
 #define CTP_MAX_INPUT_TASKS 8
 #endif // !CTP_MAX_INPUT_TASKS
+
 
 typedef enum{
   SystemTask_collect=0,
@@ -46,6 +44,7 @@ typedef struct {
   StackView stack;
   atomic_flag running;
 }SystemTaskInfo;
+
 
 typedef struct CTaskPool{
   CTaskDescription input_tasks[CTP_MAX_INPUT_TASKS];

@@ -22,22 +22,22 @@ static int _task_trampoline(void* arg1)
 
 static inline void _drain_executors(CTP* const restrict self)
 {
-  CSAQPopRes res = {0};
+  CVAQPopRes res = {0};
 
   for(size_t i=0; i<self->num_executors; i++)
   {
     CS* executor = &self->executors[i];
-    res = CSAQ_pop_try(&executor->drain_queue);
+    res = CVAQ_pop_try(&executor->drain_queue);
 
     while(CRESULT_IS_OK(res))
     {
-      CRESULT_ERR_MATCH(CSQ_push_try(&self->waiting_queue, CRESULT_OK_VAL(res)),
+      CRESULT_ERR_MATCH(CVQ_push_try(&self->waiting_queue, CRESULT_OK_VAL(res)),
           err,{
             TODO("failure in push on waiting_queue, example if full");
             UNUSED(err);
           }
       );
-      res=CSAQ_pop_try(&executor->drain_queue);
+      res=CVAQ_pop_try(&executor->drain_queue);
     }
   }
 }
@@ -74,7 +74,7 @@ static inline void _process_input_task(CTP* const restrict self)
 
       p_task->arg = in_task->arg;
       p_task->entry = in_task->entry;
-      CRESULT_ERR_MATCH(CSQ_push_try(&self->waiting_queue, p_task),
+      CRESULT_ERR_MATCH(CVQ_push_try(&self->waiting_queue, p_task),
           err,{
             TODO("failure in push on waiting_queue, example if full");
             UNUSED(err);
@@ -97,27 +97,27 @@ static int _system_task_collect(void* arg)
 static int _system_task_schedule(void* arg)
 {
   CTP* self = (CTP*) arg;
-  CSQPopRes res = {0};
+  CVQPopRes res = {0};
   CRReturn ret_res ={0};
   CTask* task = NULL;
 
-  res = CSQ_pop_try(&self->waiting_queue);
+  res = CVQ_pop_try(&self->waiting_queue);
 
   while(CRESULT_IS_OK(res))
   {
     task = CRESULT_OK_VAL(res);
 
     ret_res =
-      CSAQ_push_try(&self->executors[self->exec_cursor].world_task_queue[task->type], task);
+      CVAQ_push_try(&self->executors[self->exec_cursor].world_task_queue[task->type], task);
     while(CRESULT_IS_ERR(ret_res))
     {
       self->exec_cursor = (self->exec_cursor + 1) % self->num_executors;
       ret_res =
-        CSAQ_push_try(&self->executors[self->exec_cursor].world_task_queue[task->type], task);
+        CVAQ_push_try(&self->executors[self->exec_cursor].world_task_queue[task->type], task);
     }
 
 
-    res=CSQ_pop_try(&self->waiting_queue);
+    res=CVQ_pop_try(&self->waiting_queue);
   }
   return 0;
 }
@@ -134,7 +134,7 @@ CRRETURN CTP_init(CTP* const restrict self, CS* const executors, const size_t si
 
   cr_memset(self, 0, sizeof(*self));
 
-  TRY(CSQ_init(&self->waiting_queue));
+  TRY(CVQ_init(&self->waiting_queue));
 
   self->system_tasks[SystemTask_collect].task = 
     CTask_init(_system_task_collect, self, TaskType_System);
@@ -193,13 +193,13 @@ CRRETURN CTP_add_task(CTP* const restrict self, const CTaskDescription task)
 
 CRRETURN CTP_bootstrap(CTP* const restrict self)
 {
-  TRY(CSAQ_push_try(
+  TRY(CVAQ_push_try(
       &self->executors->world_task_queue[TaskType_System],
       &self->system_tasks[SystemTask_collect].task));
 
   while(!atomic_is_lock_free(&self->system_tasks[SystemTask_collect].running));
 
-  TRY(CSAQ_push_try(
+  TRY(CVAQ_push_try(
       &self->executors->world_task_queue[TaskType_System],
       &self->system_tasks[SystemTask_schedule].task));
 

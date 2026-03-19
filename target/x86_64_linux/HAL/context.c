@@ -3,8 +3,9 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include <CRuntime/common/common.h>
 #include <CRuntime/common/errors/errors.h>
+#include <CRuntime/common/utils/utils.h>
+#include <CRuntime/common/HAL/debug.h>
 #include <string.h>
 
 typedef uint64_t Reg;
