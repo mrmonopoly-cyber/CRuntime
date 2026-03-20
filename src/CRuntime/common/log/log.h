@@ -13,9 +13,12 @@
  *
  */
 
-#include "CResult.h"
+
 #include <stdatomic.h>
 #include <stddef.h>
+#include <stddef.h>
+
+#include <CResult.h>
 
 #include <CRuntime/common/utils/utils.h>
 #include <CRuntime/common/CVAQ/CVAQ.h>
@@ -70,24 +73,22 @@ typedef CRESULT_TEMPLATE(CRLWorker*, CRStatus) ResPopQueue;
 #ifndef NO_LOG
 CRReturn _CRLog_init(const CRLogOpt opt);
 
-CRESULT_RETURN(ResPopQueue) CRLog_get_queue(CRL* self, const size_t queue_index);
-
-CRRETURN _CRLog(CRLWorker* self,
+CRRETURN _CRLog(CRL* rl,
+    const size_t worker_id,
     const char* file,
     const size_t line,
     const CRLogLevel level,
-    const char* msg);
-#define LOG(LOG, LEV, MSG) _CRLog(LOG, __FILE__, __LINE__, (LEV), (MSG))
+    const char* fmt,
+    ...);
+#define LOG(LOG, ID, LEV, FMT, ...) \
+  _CRLog((LOG), (ID), __FILE__, __LINE__, (LEV), (FMT), ##__VA_ARGS__)
 
 void CRLog_drain_x(CRL* self, const size_t log_per_queue);
 
 CRReturn CRLog_destroy(CRL* self);
 #else
-#define CRLog_init(path)
-
-#define CRlog_get_queue(queue_index)
-
+#define CRLog_init(opt)
+#define CRLog_drain_x(s, l)
 #define LOG(LOG, LEV, MSG)
-
-CRReturn _CRLog_destroy()
+CRReturn _CRLog_destroy(s)
 #endif // !NO_LOG

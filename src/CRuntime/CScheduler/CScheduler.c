@@ -1,4 +1,5 @@
 #include "CScheduler.h"
+#include "CRuntime/common/utils/utils.h"
 
 #include <assert.h>
 #include <stdatomic.h>
@@ -14,7 +15,7 @@ int idle_task(void* in)
 
   while (self)
   {
-    CRLog_drain_x(self->cr_ctx->logger, 1);
+    CRLog_drain_x(self->cr_ctx->logger, 1); //TODO: test best amount to drain. Need measurements
     Context_switch(self->active_ctx, &self->ctx);
   }
 
@@ -22,7 +23,7 @@ int idle_task(void* in)
   while(1);
 }
 
-CRRETURN CS_init(CS* const self, CCTX* cr_ctx)
+CRRETURN CS_init(CS* const self, const size_t worker_id, CCTX* cr_ctx)
 {
   ContextAction action ={0};
 
@@ -56,6 +57,8 @@ CRRETURN CS_init(CS* const self, CCTX* cr_ctx)
       }
   );
 
+  self->worker_id = worker_id;
+
   return OK();
 }
 
@@ -88,31 +91,79 @@ void _CS_manage_task(CS* const restrict self, CTask* const task)
 CRRETURN CS_run(CS* const restrict self)
 {
   assert(self);
+  CTask* task = NULL;
 
   while (1)
   {
     CRESULT_OK_MATCH(CVAQ_pop_try(&self->world_task_queue[TaskType_System]),
         res,{
-          _CS_manage_task(self, res);
+          task = res;
+          CRESULT_ERR_MATCH(LOG(
+                self->cr_ctx->logger,
+                self->worker_id,
+                Trace,
+                "scheduling task type: %d task: %s", TaskType_System, task->name,
+                NULL
+                ),
+              err,
+              {
+                TODO("unamanager log failure");
+                UNUSED(err);
+              }
+          );
+          _CS_manage_task(self, task);
+          task = NULL;
           continue;
         }
     );
 
     CRESULT_OK_MATCH(CVQ_pop_try(&self->local_queue),
         res,{
+          task = res;
+          CRESULT_ERR_MATCH(LOG(
+                self->cr_ctx->logger,
+                self->worker_id,
+                Trace,
+                "scheduling local task: %s", task->name,
+                NULL
+                ),
+              err,
+              {
+                TODO("unmanaged log failure");
+                UNUSED(err);
+              }
+          );
           _CS_manage_task(self, res);
+          task = NULL;
           continue;
         }
     );
 
     for(TaskType t=TaskType_System + 1; t<__NUM_TaskType; t++)
     {
+
       CRESULT_OK_MATCH(CVAQ_pop_try(&self->world_task_queue[t]),
           res,{
-            _CS_manage_task(self, res);
+            task = res;
+            CRESULT_ERR_MATCH(LOG(
+                  self->cr_ctx->logger,
+                  self->worker_id,
+                  Trace,
+                  "scheduling task type: %d task: %s", t, task->name,
+                  NULL
+                  ),
+                err,
+                {
+                  TODO("unamanager log failure");
+                  UNUSED(err);
+                }
+            );
+
+            _CS_manage_task(self, task);
             continue;
           }
       );
+      task = NULL;
     }
 
     self->active_ctx = &self->idle_ctx;

@@ -1,4 +1,5 @@
 #include "CTP.h"
+#include "CRuntime/common/log/log.h"
 
 #include <assert.h>
 #include <stdatomic.h>
@@ -65,6 +66,7 @@ static inline void _process_input_task(CTP* const restrict self)
           }
           p_task = &self->list[pool_index];
           p_task->name = t_in->name;
+          p_task->type = TaskType_User;
 
           action.arg = p_task;
 
@@ -112,6 +114,7 @@ static int _system_task_schedule(void* arg)
   CVQPopRes res = {0};
   CRReturn ret_res ={0};
   CTask* task = NULL;
+  size_t index =0;
 
   res = CVQ_pop_try(&self->waiting_queue);
 
@@ -119,22 +122,29 @@ static int _system_task_schedule(void* arg)
   {
     task = CRESULT_OK_VAL(res);
 
-    ret_res =
-      CVAQ_push_try(&self->executors[self->exec_cursor].world_task_queue[task->type], task);
-    while(CRESULT_IS_ERR(ret_res))
-    {
-      self->exec_cursor = (self->exec_cursor + 1) % self->num_executors;
+    do{
+      index = self->exec_cursor;
       ret_res =
-        CVAQ_push_try(&self->executors[self->exec_cursor].world_task_queue[task->type], task);
+        CVAQ_push_try(&self->executors[index].world_task_queue[task->type], task);
+      self->exec_cursor = (self->exec_cursor + 1) % self->num_executors;
     }
+    while(CRESULT_IS_ERR(ret_res));
 
+    CRESULT_ERR_MATCH(LOG(self->runtime_ctx->logger, CR_MAX_NUM_OF_CORES, Trace,
+        "pushing task %s on executor %d, queue %d", task->name, index, task->type),
+        err,
+        {
+          UNUSED(err);
+          TODO("manager error in logging");
+        }
+    );
 
     res=CVQ_pop_try(&self->waiting_queue);
   }
   return 0;
 }
 
-CRRETURN CTP_init(CTP* const restrict self, CS* const executors, const size_t size)
+CRRETURN CTP_init(CTP* const restrict self, CS* const executors, const size_t size, CCTX* ctx)
 {
   assert(self);
 
@@ -150,10 +160,10 @@ CRRETURN CTP_init(CTP* const restrict self, CS* const executors, const size_t si
   TRY(CVQ_init(&self->input_tasks_queue));
 
   self->system_tasks[SystemTask_collect].task = 
-    CTask_init(_system_task_collect, self, TaskType_System);
+    CTask_init(_system_task_collect, self, "Collector", TaskType_System);
 
   self->system_tasks[SystemTask_schedule].task = 
-    CTask_init(_system_task_schedule, self, TaskType_System);
+    CTask_init(_system_task_schedule, self, "Scheduler", TaskType_System);
 
   for(SystemTask t=SystemTask_collect; t<__NUM_SystemTask; t++)
   {
@@ -182,6 +192,7 @@ CRRETURN CTP_init(CTP* const restrict self, CS* const executors, const size_t si
 
   self->executors = executors;
   self->num_executors = size;
+  self->runtime_ctx = ctx;
 
   return OK();
 }

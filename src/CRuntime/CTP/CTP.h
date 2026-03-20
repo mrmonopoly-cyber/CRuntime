@@ -19,6 +19,7 @@
 #include <CRuntime/common/HAL/context.h>
 #include <CRuntime/common/errors/errors.h>
 
+#include <CRuntime/CCTX/CCTX.h>
 #include <CRuntime/CScheduler/CScheduler.h>
 
 #ifdef CTP_CAPACITY
@@ -56,6 +57,7 @@ typedef struct CTaskPool{
   CTask list[CTP_CAPACITY];
   SystemTaskInfo system_tasks[__NUM_SystemTask];
   CS* executors;
+  CCTX *runtime_ctx;
   size_t num_executors;
   size_t exec_cursor;
 }CTP;
@@ -66,8 +68,10 @@ typedef CRESULT_TEMPLATE(CTask*, CRStatus) CTPPopRes;
  * \brief initialize at task pool
  *
  * @param self pointer to a valid uninitialized instance of CTP
+ * @param executors array of executors already initialized
+ * @param size number of executors
  */
-CRRETURN CTP_init(CTP* const restrict self, CS* const executors, const size_t size);
+CRRETURN CTP_init(CTP* const restrict self, CS* const executors, const size_t size, CCTX* ctx);
 
 /**
  * \brief add a new specialized task in pool

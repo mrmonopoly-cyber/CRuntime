@@ -43,7 +43,7 @@ typedef struct{
   TaskType type;
 }CTask;
 
-#define CTask_init(ENTRY, ARG, TYPE) ((CTask){.entry=ENTRY, .arg=ARG, .type=TYPE})
+#define CTask_init(ENTRY, ARG, NAME, TYPE) ((CTask){.entry=ENTRY, .arg=ARG, .name=NAME, .type=TYPE})
 
 typedef struct{
   StackView stack;
@@ -63,18 +63,20 @@ typedef struct CScheduler{
   Context idle_ctx;
   Context ctx;
   Context* active_ctx;
+  size_t worker_id;
   CCTX* cr_ctx;
 }CS;
 
 /**
  * \brief initialize the memory for the executor
  *
- * @param cs pointer to the executor
+ * @param self pointer to the executor
+ * @param worker_id unique id for the worker in range [0 ... CR_MAX_NUM_OF_CORES -1]
  * @param cr_ctx pointer to runtime context
  *
  * @return look \ref CRStatus for more info
  */
-CRRETURN CS_init(CS* const cs, CCTX* cr_ctx);
+CRRETURN CS_init(CS* const self, const size_t worker_id, CCTX* cr_ctx);
 
 /**
  * \brief synchronously run the executor.

@@ -47,7 +47,7 @@ CRRETURN _CRuntime_init(CRuntime* const restrict self, const CRuntimeInitOpt opt
       res,
       {
         UNUSED(res);
-        TRY(LOG(self->ctx.logger, CR_MAX_NUM_OF_CORES, Trace, "log correctly initialized", NULL));
+        TRY(LOG(self->ctx.logger, CR_MAX_NUM_OF_CORES, Trace, "log correctly initialized",));
         CRLog_drain_x(self->ctx.logger, 1);
       },
       {
@@ -73,7 +73,7 @@ CRRETURN _CRuntime_init(CRuntime* const restrict self, const CRuntimeInitOpt opt
     );
   }
 
-  TRY(LOG(self->ctx.logger, CR_MAX_NUM_OF_CORES, Trace, "CRuntime init ok", NULL));
+  TRY(LOG(self->ctx.logger, CR_MAX_NUM_OF_CORES, Trace, "CRuntime init ok",));
 
   return OK();
 }
@@ -160,7 +160,7 @@ CRRETURN CRuntime_start_sync(CRuntime* const restrict self)
 
   self->running = true;
 
-  TRY(LOG(self->ctx.logger, CR_MAX_NUM_OF_CORES, Trace, "runtime started", NULL));
+
   return OK();
 }
 

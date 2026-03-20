@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdarg.h>
-
+#include <stdint.h>
 
 void *cr_memset(void *s, int c, size_t n)
 {
@@ -19,13 +19,13 @@ void *cr_memset(void *s, int c, size_t n)
 size_t cr_strlen(const char* str)
 {
   size_t l=0;
-  while(str[l++]);
+  while(str[l]) l++;
   return l;
 }
 
 size_t cr_itoa(int value, char *sp, size_t radix)
 {
-    char tmp[16];
+    char tmp[32];
     char *tp = tmp;
     int i;
     unsigned v;
@@ -60,98 +60,102 @@ size_t cr_itoa(int value, char *sp, size_t radix)
     return len;
 }
 
-int cr_vsnprintf(char* buf, size_t size, const char* fmt, ...)
+size_t cr_vsnprintf_arg(char *restrict s, size_t n, const char* fmt, va_list arg)
 {
-  va_list arg;
-  size_t written=0;
-  size_t temp_writ=0;
-  bool next_fmt = false;
+  size_t written =0, len;
+  char in_c;
+  bool command = false;
   int d;
-  size_t u;
-  char c, in_c;
-  char* s = buf, *ts;
-
-  va_start(arg, fmt);
+  unsigned int u;
+  char c;
+  char *sp;
 
   while (*fmt)
   {
-    if(written > size) return written;
-
     in_c = *fmt++;
     switch (in_c)
     {
       case '%':
-        next_fmt = true;
-        break;
-      case 'd':
-        if(next_fmt)
-        {
-          d = va_arg(arg, int);
-          temp_writ = cr_itoa(d, s ,10);
-          s+=temp_writ;
-          written+=temp_writ;
-          next_fmt=false;
-          break;
-        }
-        goto cs_vsnprintf_defaut;
-        break;
-      case 'u':
-        if(next_fmt)
-        {
-          u = va_arg(arg, int);
-          temp_writ = cr_itoa(u, s ,10);
-          s+=temp_writ;
-          written+=temp_writ;
-          next_fmt=false;
-          break;
-        }
-        goto cs_vsnprintf_defaut;
-        break;
-      case 'x':
-        if(next_fmt)
-        {
-          u = va_arg(arg, int);
-          temp_writ = cr_itoa(u, s ,16);
-          s+=temp_writ;
-          written+=temp_writ;
-          next_fmt=false;
-          break;
-        }
-        goto cs_vsnprintf_defaut;
+        command = true;
         break;
       case 'c':
-        if(next_fmt)
+        if(command && written + sizeof(char) < n)
         {
           c = (char) va_arg(arg, int);
           *(s++) = c;
           written++;
-          next_fmt = false;
+          command = false;
           break;
         }
-        goto cs_vsnprintf_defaut;
-        break;
-      case 's':
-        if(next_fmt)
+        goto vsnprintf_default;
+      case 'd':
+        if(command && written + sizeof(int) < n)
         {
-          ts = va_arg(arg, char*);
-          while(*ts)
-          {
-            written++;
-            *(s++) = *(ts++);
-          }
-          next_fmt = false;
+          d = va_arg(arg, int);
+          len= cr_itoa(d, s, 10);
+          written+=len;
+          s+=len;
+          command = false;
           break;
         }
-        goto cs_vsnprintf_defaut;
-        break;
+        goto vsnprintf_default;
+      case 'u':
+        if(command && written + sizeof(unsigned int) < n)
+        {
+          u = va_arg(arg, unsigned int);
+          len= cr_itoa(u, s, 10);
+          written+=len;
+          s+=len;
+          command = false;
+          break;
+        }
+        goto vsnprintf_default;
+      case 'x':
+        if(command && written + sizeof(int) < n)
+        {
+          d = va_arg(arg, int);
+          len= cr_itoa(d, s, 16);
+          written+=len;
+          s+=len;
+          command = false;
+          break;
+        }
+        goto vsnprintf_default;
+      case 's':
+        if(command)
+        {
+          sp = va_arg(arg, char*);
+          while(written + 1 < n && *sp)
+          {
+            *(s++) = *(sp++);
+            written++;
+          }
+          command = false;
+          break;
+        }
+        goto vsnprintf_default;
       default:
-cs_vsnprintf_defaut:
-        *(s++) = in_c;
-        written++;
-    
+vsnprintf_default:
+        if(written + sizeof(char) < n)
+        {
+          *(s++) = in_c;
+          written++;
+        }
+        break;
     }
   }
 
+  return written;
+}
+
+size_t cr_vsnprintf(char* buf, size_t size, const char* fmt, ...)
+{
+  va_list arg;
+  size_t written=0;
+
+  va_start(arg, fmt);
+  written = cr_vsnprintf_arg(buf, size, fmt, arg);
+  va_end(arg);
 
   return written;
 }

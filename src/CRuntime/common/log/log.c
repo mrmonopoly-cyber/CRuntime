@@ -1,9 +1,11 @@
 #include "log.h"
 
-#include <CRuntime/common/HAL/HAL.h>
-#include <CRuntime/common/utils/utils.h>
 #include <assert.h>
+#include <stdarg.h>
 #include <stdatomic.h>
+#include <stdarg.h>
+
+#include <CRuntime/common/HAL/HAL.h>
 
 #ifndef NO_LOG
 
@@ -115,14 +117,21 @@ CRESULT_RETURN(ResPopQueue) CRLog_get_queue(CRL* rl, const size_t queue_index)
   return CRESULT_T_OK(ResPopQueue, &self->data_to_log[queue_index]);
 }
 
-CRRETURN _CRLog(CRLWorker* self,
+CRRETURN _CRLog(CRL* rl,
+    const size_t worker_id,
     const char* file,
     const size_t line,
     const CRLogLevel level,
-    const char* msg)
+    const char* fmt,
+    ...)
 {
+  assert(worker_id <= CR_MAX_NUM_OF_CORES + 1);
+
+  CRL* p_rl = rl ? rl : &g_default_logger;
+  CRLWorker* self = &p_rl->data_to_log[worker_id];
   const size_t next_free = self->bucket_next_free;
   LogInfo* log = &self->bucket[next_free];
+  va_list arg;
 
   if(log->msg[0] != '\0')
   {
@@ -152,8 +161,13 @@ CRRETURN _CRLog(CRLWorker* self,
       break;
   }
 
-  cursor += cr_vsnprintf(cursor, MAX_STRING, "%s.%d: %s\n\r", file, line, msg);
+  cursor += cr_vsnprintf(cursor, MAX_STRING, "%s.%d: ", file, line);
+  
+  va_start(arg, fmt);
+  cursor += cr_vsnprintf_arg(cursor, MAX_STRING, fmt, arg);
+  va_end(arg);
 
+  cursor += cr_vsnprintf(cursor, MAX_STRING, "\n\r", NULL);
 
   return CVAQ_push_try(&self->data_to_log, log);
 }
@@ -197,6 +211,8 @@ void CRLog_drain_x(CRL* rl, const size_t log_per_queue)
       );
     }
   }
+
+  atomic_flag_clear(&g_draining);
 
 }
 
