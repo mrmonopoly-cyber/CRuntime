@@ -71,4 +71,4 @@ CRESULT_RETURN(CVAQPopRes) _CVAQ_pop_try(CVAQ* const self, const size_t size);
  * @return see \ref CRReturn in errors.h
  */
 size_t _CVAQ_size(const CVAQ* const self, const size_t size);
-#define CVAQ_size(self) _CVAQ_size((CVAQ*)self, CR_ATOMIC_QUEUE_MAX_SIZE((self)));
+#define CVAQ_size(self) _CVAQ_size((CVAQ*)self, CR_ATOMIC_QUEUE_MAX_SIZE((self)))

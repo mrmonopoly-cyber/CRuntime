@@ -36,6 +36,10 @@
 #define DEFAULT_LOG_FILE_DIR_PATH "."
 #endif // !DEFAULT_LOG_FILE_DIR_PATH
 
+#ifndef CR_LOG_FILL_THRESHOLD
+#define CR_LOG_FILL_THRESHOLD (INPUT_LOG_QUEUE_SIZE/2)
+#endif // !CR_LOG_FILL_THRESHOLD
+
 typedef enum{
  Trace=0,
  Debug,
@@ -61,6 +65,7 @@ typedef struct CRLogger{
   void* log_file;
   const char* log_file_path;
   CRLWorker data_to_log[CR_MAX_NUM_OF_CORES + 1];
+  size_t most_load;
 }CRL;
 
 typedef struct{
@@ -85,10 +90,13 @@ CRRETURN _CRLog(CRL* rl,
 
 void CRLog_drain_x(CRL* self, const size_t log_per_queue);
 
+size_t CRLog_size(CRL* self);
+
 CRReturn CRLog_destroy(CRL* self);
 #else
-#define CRLog_init(opt)
+#define CRLog_init(opt) (Ok())
 #define CRLog_drain_x(s, l)
-#define LOG(LOG, LEV, MSG)
-CRReturn _CRLog_destroy(s)
+#define LOG(LOG, LEV, MSG) (Ok())
+#define CRLog_size(self) (0)
+CRReturn _CRLog_destroy(s) (Ok())
 #endif // !NO_LOG

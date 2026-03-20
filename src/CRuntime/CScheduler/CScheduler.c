@@ -114,6 +114,12 @@ CRRETURN CS_run(CS* const restrict self)
         }
     );
 
+    if(CRLog_size(self->cr_ctx->logger) > CR_LOG_FILL_THRESHOLD)
+    {
+      TODO("h");
+      CRLog_drain_x(self->cr_ctx->logger, CR_LOG_FILL_THRESHOLD);
+    }
+
     CRESULT_OK_MATCH(CVQ_pop_try(&self->local_queue),
         res,{
           CRESULT_ERR_MATCH(LOG(
@@ -136,7 +142,6 @@ CRRETURN CS_run(CS* const restrict self)
 
     for(TaskType t=TaskType_System + 1; t<__NUM_TaskType; t++)
     {
-
       CRESULT_OK_MATCH(CVAQ_pop_try(&self->world_task_queue[t]),
           res,{
             CRESULT_ERR_MATCH(LOG(

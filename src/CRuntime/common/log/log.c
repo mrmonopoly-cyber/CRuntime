@@ -107,16 +107,6 @@ bad:
   return err;
 }
 
-CRESULT_RETURN(ResPopQueue) CRLog_get_queue(CRL* rl, const size_t queue_index)
-{
-  CRL* self = rl ? rl : &g_default_logger;
-  const size_t num_queues = sizeof(self->data_to_log)/sizeof(self->data_to_log[0]);
-
-  assert(queue_index < num_queues);
-
-  return CRESULT_T_OK(ResPopQueue, &self->data_to_log[queue_index]);
-}
-
 CRRETURN _CRLog(CRL* rl,
     const size_t worker_id,
     const char* file,
@@ -132,8 +122,9 @@ CRRETURN _CRLog(CRL* rl,
   const size_t next_free = self->bucket_next_free;
   LogInfo* log = &self->bucket[next_free];
   va_list arg;
+  size_t fill_level=CVAQ_size(&self->data_to_log);
 
-  if(log->msg[0] != '\0')
+  if( fill_level >= INPUT_LOG_QUEUE_SIZE)
   {
     return ERR(CR_STATUS_ERR_FULL, "worker's log queue is full");
   }
@@ -169,7 +160,13 @@ CRRETURN _CRLog(CRL* rl,
 
   cursor += cr_vsnprintf(cursor, MAX_STRING, "\n\r", NULL);
 
-  return CVAQ_push_try(&self->data_to_log, log);
+  TRY(CVAQ_push_try(&self->data_to_log, log));
+
+  fill_level++;
+
+  if(fill_level > p_rl->most_load) p_rl->most_load = fill_level;
+
+  return OK();
 }
 
 void CRLog_drain_x(CRL* rl, const size_t log_per_queue)
@@ -214,6 +211,12 @@ void CRLog_drain_x(CRL* rl, const size_t log_per_queue)
 
   atomic_flag_clear(&g_draining);
 
+}
+
+size_t CRLog_size(CRL* rl)
+{
+  CRL* self = rl ? rl : &g_default_logger;
+  return self->most_load;
 }
 
 CRReturn CRLog_destroy(CRL* rl)
