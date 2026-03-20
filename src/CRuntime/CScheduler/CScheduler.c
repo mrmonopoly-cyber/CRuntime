@@ -91,18 +91,16 @@ void _CS_manage_task(CS* const restrict self, CTask* const task)
 CRRETURN CS_run(CS* const restrict self)
 {
   assert(self);
-  CTask* task = NULL;
 
   while (1)
   {
     CRESULT_OK_MATCH(CVAQ_pop_try(&self->world_task_queue[TaskType_System]),
         res,{
-          task = res;
           CRESULT_ERR_MATCH(LOG(
                 self->cr_ctx->logger,
                 self->worker_id,
                 Trace,
-                "scheduling task type: %d task: %s", TaskType_System, task->name,
+                "scheduling task type: %d task: %s", TaskType_System, ((CTask*)res)->name,
                 NULL
                 ),
               err,
@@ -111,20 +109,18 @@ CRRETURN CS_run(CS* const restrict self)
                 UNUSED(err);
               }
           );
-          _CS_manage_task(self, task);
-          task = NULL;
+          _CS_manage_task(self, res);
           continue;
         }
     );
 
     CRESULT_OK_MATCH(CVQ_pop_try(&self->local_queue),
         res,{
-          task = res;
           CRESULT_ERR_MATCH(LOG(
                 self->cr_ctx->logger,
                 self->worker_id,
                 Trace,
-                "scheduling local task: %s", task->name,
+                "scheduling local task: %s", ((CTask*)res)->name,
                 NULL
                 ),
               err,
@@ -134,7 +130,6 @@ CRRETURN CS_run(CS* const restrict self)
               }
           );
           _CS_manage_task(self, res);
-          task = NULL;
           continue;
         }
     );
@@ -144,12 +139,11 @@ CRRETURN CS_run(CS* const restrict self)
 
       CRESULT_OK_MATCH(CVAQ_pop_try(&self->world_task_queue[t]),
           res,{
-            task = res;
             CRESULT_ERR_MATCH(LOG(
                   self->cr_ctx->logger,
                   self->worker_id,
                   Trace,
-                  "scheduling task type: %d task: %s", t, task->name,
+                  "scheduling task type: %d task: %s", t, ((CTask*)res)->name,
                   NULL
                   ),
                 err,
@@ -159,11 +153,10 @@ CRRETURN CS_run(CS* const restrict self)
                 }
             );
 
-            _CS_manage_task(self, task);
+            _CS_manage_task(self, res);
             continue;
           }
       );
-      task = NULL;
     }
 
     self->active_ctx = &self->idle_ctx;
