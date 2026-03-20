@@ -46,7 +46,10 @@ typedef struct {
 }SystemTaskInfo;
 
 
+typedef CR_QUEUE_TEMPLATE(CTaskDescription*, CTP_MAX_INPUT_TASKS) CTDQ;
+
 typedef struct CTaskPool{
+  CTDQ input_tasks_queue;
   CTaskDescription input_tasks[CTP_MAX_INPUT_TASKS];
   size_t input_tasks_cursor;
   CSQ waiting_queue;

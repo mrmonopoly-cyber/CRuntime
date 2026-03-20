@@ -89,6 +89,7 @@ CRRETURN _CRuntime_init(CRuntime* const restrict self, const CRuntimeInitOpt opt
 
 CRRETURN CRuntime_add_task(
     CRuntime* const restrict self,
+    const char* const task_name,
     const TaskEntry fun,
     void* arg,
     const StackView stack)
@@ -96,6 +97,7 @@ CRRETURN CRuntime_add_task(
   CTaskDescription desc ={
     .entry = fun,
     .stack = stack,
+    .name = task_name,
     .arg = arg
   };
   CHECK_SELF_INPUT(self);

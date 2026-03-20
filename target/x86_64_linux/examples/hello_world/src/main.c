@@ -58,6 +58,7 @@ int main(int argc, char** argv)
 
   CRESULT_ERR_MATCH(CRuntime_add_task(
         &runtime,
+        "task_1",
         task_f_1,
         (void*)(uintptr_t)42,
         INIT_STATIC_STACK(task_stack_1)),
@@ -69,6 +70,7 @@ int main(int argc, char** argv)
 
   CRESULT_ERR_MATCH(CRuntime_add_task(
         &runtime,
+        "task_2",
         task_f_2,
         (void*)(uintptr_t)69,
         INIT_STATIC_STACK(task_stack_2)),

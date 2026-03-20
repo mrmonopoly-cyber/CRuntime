@@ -38,6 +38,7 @@ typedef struct{
   Context ctx;
   Context* caller;
   TaskEntry entry;
+  const char* name;
   void* arg;
   TaskType type;
 }CTask;
@@ -47,6 +48,7 @@ typedef struct{
 typedef struct{
   StackView stack;
   TaskEntry entry;
+  const char* name;
   void* arg;
 }CTaskDescription;
 

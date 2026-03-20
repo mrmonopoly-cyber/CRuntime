@@ -44,7 +44,7 @@ static inline void _drain_executors(CTP* const restrict self)
 
 static inline void _process_input_task(CTP* const restrict self)
 {
-  CTaskDescription* in_task = NULL;
+  CTaskDescription* t_in = NULL;
   CTask* p_task= NULL;
   size_t pool_index = 0;
   ContextAction action = {
@@ -54,33 +54,45 @@ static inline void _process_input_task(CTP* const restrict self)
 
   for(size_t i=0; i<CTP_MAX_INPUT_TASKS;i++)
   {
-    in_task = &self->input_tasks[i];
-    if(in_task->entry)
-    {
-      while(self->list[pool_index].entry)
-      {
-        pool_index = (pool_index + 1) % CTP_CAPACITY;
-      }
-      p_task = &self->list[pool_index];
+    CRESULT_FULL_MATCH(CVQ_pop_try(&self->input_tasks_queue),
+        res,
+        {
+          t_in = res;
 
-      action.arg = p_task;
-
-      CRESULT_ERR_MATCH(Context_init(&p_task->ctx, in_task->stack, action),
-          err,{
-            TODO("manage error in contex init fail");
-            UNUSED(err);
+          while(self->list[pool_index].entry)
+          {
+            pool_index = (pool_index + 1) % CTP_CAPACITY;
           }
-      );
+          p_task = &self->list[pool_index];
+          p_task->name = t_in->name;
 
-      p_task->arg = in_task->arg;
-      p_task->entry = in_task->entry;
-      CRESULT_ERR_MATCH(CVQ_push_try(&self->waiting_queue, p_task),
-          err,{
-            TODO("failure in push on waiting_queue, example if full");
-            UNUSED(err);
+          action.arg = p_task;
+
+          CRESULT_ERR_MATCH(Context_init(&p_task->ctx, t_in->stack, action),
+              err,{
+                TODO("manage error in contex init fail");
+                UNUSED(err);
+              }
+          );
+
+          p_task->arg = t_in->arg;
+          p_task->entry = t_in->entry;
+          CRESULT_ERR_MATCH(CVQ_push_try(&self->waiting_queue, p_task),
+              err,{
+                TODO("failure in push on waiting_queue, example if full");
+                UNUSED(err);
+              }
+          );
+        },
+        {
+          if(res.status != CR_STATUS_ERR_EMPTY)
+          {
+            TODO("unamanaged error");
+            UNUSED(res);
           }
-      );
-    }
+          break;
+        }
+    );
   }
 }
 
@@ -135,6 +147,7 @@ CRRETURN CTP_init(CTP* const restrict self, CS* const executors, const size_t si
   cr_memset(self, 0, sizeof(*self));
 
   TRY(CVQ_init(&self->waiting_queue));
+  TRY(CVQ_init(&self->input_tasks_queue));
 
   self->system_tasks[SystemTask_collect].task = 
     CTask_init(_system_task_collect, self, TaskType_System);
@@ -185,7 +198,11 @@ CRRETURN CTP_add_task(CTP* const restrict self, const CTaskDescription task)
     return ERR(CR_STATUS_ERR_FULL, "user input task's lists is full");
   }
 
-  self->input_tasks[self->input_tasks_cursor] = task;
+  CTaskDescription* t_p = &self->input_tasks[self->input_tasks_cursor];
+  *t_p = task;
+
+  TRY(CVQ_push_try(&self->input_tasks_queue, t_p));
+
   self->input_tasks_cursor = (self->input_tasks_cursor+1) % CTP_MAX_INPUT_TASKS;
 
   return OK();
