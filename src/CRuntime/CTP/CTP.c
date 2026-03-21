@@ -23,22 +23,22 @@ static int _task_trampoline(void* arg1)
 
 static inline void _drain_executors(CTP* const restrict self)
 {
-  CVAQPopRes res = {0};
+  CSAQPopRes res = {0};
 
   for(size_t i=0; i<self->num_executors; i++)
   {
     CS* executor = &self->executors[i];
-    res = CVAQ_pop_try(&executor->drain_queue);
+    res = CSAQ_pop_try(&executor->drain_queue);
 
     while(CRESULT_IS_OK(res))
     {
-      CRESULT_ERR_MATCH(CVQ_push_try(&self->waiting_queue, CRESULT_OK_VAL(res)),
+      CRESULT_ERR_MATCH(CSQ_push_try(&self->waiting_queue, CRESULT_OK_VAL(res)),
           err,{
             TODO("failure in push on waiting_queue, example if full");
             UNUSED(err);
           }
       );
-      res=CVAQ_pop_try(&executor->drain_queue);
+      res=CSAQ_pop_try(&executor->drain_queue);
     }
   }
 }
@@ -53,9 +53,9 @@ static inline void _process_input_task(CTP* const restrict self)
     .arg = NULL,
   };
 
-  for(size_t i=0; i<CTP_MAX_INPUT_TASKS;i++)
+  for(size_t i=0; i<CTDQ_CAPACITY;i++)
   {
-    CRESULT_FULL_MATCH(CVQ_pop_try(&self->input_tasks_queue),
+    CRESULT_FULL_MATCH(CTDQ_pop_try(&self->input_tasks_queue),
         res,
         {
           t_in = res;
@@ -79,7 +79,7 @@ static inline void _process_input_task(CTP* const restrict self)
 
           p_task->arg = t_in->arg;
           p_task->entry = t_in->entry;
-          CRESULT_ERR_MATCH(CVQ_push_try(&self->waiting_queue, p_task),
+          CRESULT_ERR_MATCH(CSQ_push_try(&self->waiting_queue, p_task),
               err,{
                 TODO("failure in push on waiting_queue, example if full");
                 UNUSED(err);
@@ -111,12 +111,12 @@ static int _system_task_collect(void* arg)
 static int _system_task_schedule(void* arg)
 {
   CTP* self = (CTP*) arg;
-  CVQPopRes res = {0};
+  CSQPopRes res = {0};
   CRReturn ret_res ={0};
   CTask* task = NULL;
   size_t index =0;
 
-  res = CVQ_pop_try(&self->waiting_queue);
+  res = CSQ_pop_try(&self->waiting_queue);
 
   while(CRESULT_IS_OK(res))
   {
@@ -125,7 +125,7 @@ static int _system_task_schedule(void* arg)
     do{
       index = self->exec_cursor;
       ret_res =
-        CVAQ_push_try(&self->executors[index].world_task_queue[task->type], task);
+        CSAQ_push_try(&self->executors[index].world_task_queue[task->type], task);
       self->exec_cursor = (self->exec_cursor + 1) % self->num_executors;
     }
     while(CRESULT_IS_ERR(ret_res));
@@ -139,7 +139,7 @@ static int _system_task_schedule(void* arg)
         }
     );
 
-    res=CVQ_pop_try(&self->waiting_queue);
+    res=CSQ_pop_try(&self->waiting_queue);
   }
   return 0;
 }
@@ -156,8 +156,8 @@ CRRETURN CTP_init(CTP* const restrict self, CS* const executors, const size_t si
 
   cr_memset(self, 0, sizeof(*self));
 
-  TRY(CVQ_init(&self->waiting_queue));
-  TRY(CVQ_init(&self->input_tasks_queue));
+  TRY(CSQ_init(&self->waiting_queue));
+  TRY(CTDQ_init(&self->input_tasks_queue));
 
   self->system_tasks[SystemTask_collect].task = 
     CTask_init(_system_task_collect, self, "Collector", TaskType_System);
@@ -204,7 +204,7 @@ CRRETURN CTP_add_task(CTP* const restrict self, const CTaskDescription task)
   assert(task.stack.start_addr);
   assert(task.stack.size);
 
-  if (self->input_tasks_cursor >= CTP_MAX_INPUT_TASKS)
+  if (self->input_tasks_cursor >= CTDQ_CAPACITY)
   {
     return ERR(CR_STATUS_ERR_FULL, "user input task's lists is full");
   }
@@ -212,22 +212,22 @@ CRRETURN CTP_add_task(CTP* const restrict self, const CTaskDescription task)
   CTaskDescription* t_p = &self->input_tasks[self->input_tasks_cursor];
   *t_p = task;
 
-  TRY(CVQ_push_try(&self->input_tasks_queue, t_p));
+  TRY(CTDQ_push_try(&self->input_tasks_queue, t_p));
 
-  self->input_tasks_cursor = (self->input_tasks_cursor+1) % CTP_MAX_INPUT_TASKS;
+  self->input_tasks_cursor = (self->input_tasks_cursor+1) % CTDQ_CAPACITY;
 
   return OK();
 }
 
 CRRETURN CTP_bootstrap(CTP* const restrict self)
 {
-  TRY(CVAQ_push_try(
+  TRY(CSAQ_push_try(
       &self->executors->world_task_queue[TaskType_System],
       &self->system_tasks[SystemTask_collect].task));
 
   while(!atomic_is_lock_free(&self->system_tasks[SystemTask_collect].running));
 
-  TRY(CVAQ_push_try(
+  TRY(CSAQ_push_try(
       &self->executors->world_task_queue[TaskType_System],
       &self->system_tasks[SystemTask_schedule].task));
 

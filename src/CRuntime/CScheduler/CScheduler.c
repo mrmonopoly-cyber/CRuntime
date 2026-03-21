@@ -33,11 +33,11 @@ CRRETURN CS_init(CS* const self, const size_t worker_id, CCTX* cr_ctx)
 
   self->cr_ctx = cr_ctx;
 
-  TRY(CVAQ_init(&self->drain_queue));
-  TRY(CVQ_init(&self->local_queue));
+  TRY(CSAQ_init(&self->drain_queue));
+  TRY(CSQ_init(&self->local_queue));
   for(size_t i=0; i<__NUM_TaskType; i++)
   {
-    TRY(CVAQ_init(&self->world_task_queue[i]));
+    TRY(CSAQ_init(&self->world_task_queue[i]));
   }
 
   action.arg = self;
@@ -72,14 +72,14 @@ void _CS_manage_task(CS* const restrict self, CTask* const task)
   //INFO: checking if task yield or terminated.
   if (task && task->entry)
   {
-    CRESULT_OK_MATCH(CVQ_push_try(&self->local_queue, task),
+    CRESULT_OK_MATCH(CSQ_push_try(&self->local_queue, task),
         ok,{
           UNUSED(ok);
           return;
         }
     );
 
-    CRESULT_ERR_MATCH(CVAQ_push_try(&self->drain_queue, task),
+    CRESULT_ERR_MATCH(CSAQ_push_try(&self->drain_queue, task),
         err,{
           UNUSED(err);
           TODO("unable to insert the task nor in the local_queue nor in drain_queue");
@@ -94,7 +94,7 @@ CRRETURN CS_run(CS* const restrict self)
 
   while (1)
   {
-    CRESULT_OK_MATCH(CVAQ_pop_try(&self->world_task_queue[TaskType_System]),
+    CRESULT_OK_MATCH(CSAQ_pop_try(&self->world_task_queue[TaskType_System]),
         res,{
           CRESULT_ERR_MATCH(LOG(
                 self->cr_ctx->logger,
@@ -120,7 +120,7 @@ CRRETURN CS_run(CS* const restrict self)
       CRLog_drain_x(self->cr_ctx->logger, CR_LOG_FILL_THRESHOLD);
     }
 
-    CRESULT_OK_MATCH(CVQ_pop_try(&self->local_queue),
+    CRESULT_OK_MATCH(CSQ_pop_try(&self->local_queue),
         res,{
           CRESULT_ERR_MATCH(LOG(
                 self->cr_ctx->logger,
@@ -142,7 +142,7 @@ CRRETURN CS_run(CS* const restrict self)
 
     for(TaskType t=TaskType_System + 1; t<__NUM_TaskType; t++)
     {
-      CRESULT_OK_MATCH(CVAQ_pop_try(&self->world_task_queue[t]),
+      CRESULT_OK_MATCH(CSAQ_pop_try(&self->world_task_queue[t]),
           res,{
             CRESULT_ERR_MATCH(LOG(
                   self->cr_ctx->logger,

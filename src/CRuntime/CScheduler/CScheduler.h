@@ -10,50 +10,12 @@
  * \date 2026
  */
 
-#include "CRuntime/CCTX/CCTX.h"
-#include <CRuntime/common/errors/errors.h>
-#include <CRuntime/common/utils/utils.h>
-#include <CRuntime/common/HAL/HAL.h>
-#include <CRuntime/common/CVAQ/CVAQ.h>
-#include <CRuntime/common/CVQ/CVQ.h>
+#include <CRuntime/CCTX/CCTX.h>
+#include <CRuntime/common/common.h>
 
-#if !defined (CSQ_CAPACITY)
-#define CSQ_CAPACITY_EXP (5)
-WARNING("using default CSAQ_CAPACITY")
-#endif // !defined (CSAQ_CAPACITY)
-
-#define CSQ_CAPACITY (1<<CSQ_CAPACITY_EXP)
-
-/*!< from 0 (highest priority) to N (lowest priority)*/
-typedef enum
-{
-  TaskType_System=0,
-  TaskType_User,
-
-  __NUM_TaskType,
-}TaskType;
-
-typedef int (*TaskEntry) (void* input);
-typedef struct{
-  Context ctx;
-  Context* caller;
-  TaskEntry entry;
-  const char* name;
-  void* arg;
-  TaskType type;
-}CTask;
-
-#define CTask_init(ENTRY, ARG, NAME, TYPE) ((CTask){.entry=ENTRY, .arg=ARG, .name=NAME, .type=TYPE})
-
-typedef struct{
-  StackView stack;
-  TaskEntry entry;
-  const char* name;
-  void* arg;
-}CTaskDescription;
-
-typedef CR_QUEUE_TEMPLATE(CTask*, CSQ_CAPACITY) CSQ;
-typedef CR_ATOMIC_QUEUE_TEMPLATE(CTask*, CSQ_CAPACITY) CSAQ;
+#include "CTask.h"
+#include "CSAQ.h"
+#include "CSQ.h"
 
 typedef struct CScheduler{
   CSAQ world_task_queue[__NUM_TaskType];

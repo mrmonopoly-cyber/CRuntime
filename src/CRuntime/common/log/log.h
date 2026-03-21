@@ -21,16 +21,10 @@
 #include <CResult.h>
 
 #include <CRuntime/common/utils/utils.h>
-#include <CRuntime/common/CVAQ/CVAQ.h>
 #include <CRuntime/common/errors/errors.h>
 
-#ifndef MAX_LOG_MSG_LENGTH
-#define MAX_LOG_MSG_LENGTH (256)
-#endif // !MAX_LOG_MSG_LENGTH
+#include "CLAQ.h"
 
-#ifndef INPUT_LOG_QUEUE_SIZE
-#define  INPUT_LOG_QUEUE_SIZE (16)
-#endif // !INPUT_LOG_QUEUE_SIZE
 
 #ifndef DEFAULT_LOG_FILE_DIR_PATH
 #define DEFAULT_LOG_FILE_DIR_PATH "."
@@ -39,21 +33,6 @@
 #ifndef CR_LOG_FILL_THRESHOLD
 #define CR_LOG_FILL_THRESHOLD (INPUT_LOG_QUEUE_SIZE/2)
 #endif // !CR_LOG_FILL_THRESHOLD
-
-typedef enum{
- Trace=0,
- Debug,
- Info,
- Warning,
- Error,
-}CRLogLevel;
-
-typedef struct{
-  char msg[MAX_LOG_MSG_LENGTH];
-}LogInfo;
-
-
-typedef CR_ATOMIC_QUEUE_TEMPLATE(LogInfo*, INPUT_LOG_QUEUE_SIZE) CLAQ;
 
 typedef struct{
   CLAQ data_to_log;
@@ -72,8 +51,6 @@ typedef struct{
   const char* log_file_path;
   CRL* const logger;
 }CRLogOpt;
-
-typedef CRESULT_TEMPLATE(CRLWorker*, CRStatus) ResPopQueue;
 
 #ifndef NO_LOG
 CRReturn _CRLog_init(const CRLogOpt opt);

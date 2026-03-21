@@ -1,3 +1,4 @@
+#define CVQ_INTERNAL
 #include "CVQ.h"
 
 #include <assert.h>

@@ -37,7 +37,7 @@ CRReturn _CRLog_init(const CRLogOpt opt)
 
   for(size_t i=0; i<num_queues; i++ )
   {
-    TRY(CVAQ_init(&self->data_to_log[i].data_to_log));
+    TRY(CLAQ_init(&self->data_to_log[i].data_to_log));
   }
 
   char* cursor =
@@ -122,7 +122,7 @@ CRRETURN _CRLog(CRL* rl,
   const size_t next_free = self->bucket_next_free;
   LogInfo* log = &self->bucket[next_free];
   va_list arg;
-  size_t fill_level=CVAQ_size(&self->data_to_log);
+  size_t fill_level=CLAQ_size(&self->data_to_log);
 
   if( fill_level >= INPUT_LOG_QUEUE_SIZE)
   {
@@ -160,7 +160,7 @@ CRRETURN _CRLog(CRL* rl,
 
   cursor += cr_vsnprintf(cursor, MAX_STRING, "\n\r", NULL);
 
-  TRY(CVAQ_push_try(&self->data_to_log, log));
+  TRY(CLAQ_push_try(&self->data_to_log, log));
 
   fill_level++;
 
@@ -186,7 +186,7 @@ void CRLog_drain_x(CRL* rl, const size_t log_per_queue)
     for(size_t j=0; j<log_per_queue; j++)
     {
       queue = &self->data_to_log[i].data_to_log;
-      CRESULT_FULL_MATCH(CVAQ_pop_try(queue),
+      CRESULT_FULL_MATCH(CLAQ_pop_try(queue),
           res_val,
           {
             msg  = res_val;

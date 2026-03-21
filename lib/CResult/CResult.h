@@ -264,7 +264,7 @@
 #define CRESULT_TEMPLATE(T_OK, T_ERR)                                                             \
 struct{                                                                                           \
   _Bool _ok;                                                                                      \
-  union{                                                                                          \
+  union{                                   \
     T_OK _ok_val;                                                                                 \
     T_ERR _err_val;                                                                               \
   }value;                                                                                         \

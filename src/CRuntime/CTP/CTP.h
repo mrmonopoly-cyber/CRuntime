@@ -22,16 +22,13 @@
 #include <CRuntime/CCTX/CCTX.h>
 #include <CRuntime/CScheduler/CScheduler.h>
 
+#include "CTDQ.h"
+
 #ifdef CTP_CAPACITY
 #errors "CTP_CAPACITY is for internal use and cannot be redefined"
 #else
-#define CTP_CAPACITY (CSQ_CAPACITY * CR_MAX_NUM_OF_CORES)
+#define CTP_CAPACITY (CSAQ_CAPACITY * CR_MAX_NUM_OF_CORES)
 #endif // CTP_CAPACITY
-
-#ifndef CTP_MAX_INPUT_TASKS
-#define CTP_MAX_INPUT_TASKS 8
-#endif // !CTP_MAX_INPUT_TASKS
-
 
 typedef enum{
   SystemTask_collect=0,
@@ -47,11 +44,9 @@ typedef struct {
 }SystemTaskInfo;
 
 
-typedef CR_QUEUE_TEMPLATE(CTaskDescription*, CTP_MAX_INPUT_TASKS) CTDQ;
-
 typedef struct CTaskPool{
   CTDQ input_tasks_queue;
-  CTaskDescription input_tasks[CTP_MAX_INPUT_TASKS];
+  CTaskDescription input_tasks[CTDQ_CAPACITY];
   size_t input_tasks_cursor;
   CSQ waiting_queue;
   CTask list[CTP_CAPACITY];
