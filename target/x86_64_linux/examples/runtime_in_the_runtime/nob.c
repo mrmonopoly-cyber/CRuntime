@@ -1,0 +1,248 @@
+#include <fcntl.h>
+#include <linux/limits.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#define NOB_IMPLEMENTATION
+#include "nob.h"
+
+#define DEP_ROOT "../.."
+#define BUILD_DIR "build"
+#define SRC_DIR "src"
+#define LIB_DIR "lib"
+#define HAL_DIR "../../HAL"
+#define ROOT_SRC_DIR "../../../.."
+#define O_FILE "main"
+
+const char* root = NULL;
+
+bool nob_verbose = false;
+bool comp_verbose = false;
+bool comp_debug_mode = false;
+
+#define NOB_VERBOSE if(nob_verbose)
+#define COMP_VERBOSE if(comp_verbose)
+#define DEBUG_MODE if(comp_debug_mode)
+
+static bool _clean_dir(Walk_Entry entry)
+{
+  if (strcmp(entry.path, "."))
+  {
+    nob_delete_file(entry.path);
+  }
+  return true;
+}
+
+static bool _compile_files(Walk_Entry entry)
+{
+  bool result = true;
+  Cmd cmd ={0};
+
+  if (entry.type == NOB_FILE_REGULAR && strncmp(entry.path + strlen(entry.path)-2, ".h", 2))
+  {
+    NOB_VERBOSE nob_log(INFO, "compiling: working on %s",entry.path);
+
+    cmd_append(&cmd, "cc");
+    cmd_append(&cmd, "-Wall");
+    cmd_append(&cmd, "-Wextra");
+    cmd_append(&cmd, "-std=c11");
+    cmd_append(&cmd, "-pedantic");
+    cmd_append(&cmd, "-I../"DEP_ROOT"/out/Include");
+    cmd_append(&cmd, "-I../"DEP_ROOT"/out/"LIB_DIR"/CResult");
+
+    cmd_append(&cmd, "-D_GNU_SOURCE");
+
+    cmd_append(&cmd, "-DCR_MAX_NUM_OF_CORES=2");
+
+    cmd_append(&cmd, "-DTHREAD_MEM_INFO_SIZE=56");
+    cmd_append(&cmd, "-DTHREAD_MEM_INFO_ALIGNEMENT=8");
+
+    cmd_append(&cmd, "-DCR_CONTEXT_SIZE=8");
+    cmd_append(&cmd, "-DCR_CONTEXT_ALIGNEMENT=16");
+
+    COMP_VERBOSE cmd_append(&cmd, "-DVERBOSE");
+    DEBUG_MODE cmd_append(&cmd, "-g");
+    DEBUG_MODE cmd_append(&cmd, "-fsanitize=address,undefined");
+    cmd_append(&cmd, "-c");
+    cmd_append(&cmd, entry.path);
+
+    if (!cmd_run(&cmd, .dont_reset = false)) return_defer(false);
+    result = true;
+  }
+  else
+  {
+    NOB_VERBOSE nob_log(INFO, "skipping %s",entry.path);
+  }
+
+defer:
+  cmd_free(cmd);
+  return result;
+}
+
+typedef struct{
+  Cmd* p_cmd;
+  char* buffer;
+  int size;
+  size_t available_space;
+  const char* o_file;
+}FindObjFileInput;
+
+static bool _find_obj_file(Walk_Entry entry)
+{
+  bool result = true;
+  Nob_String_View sv = sv_from_cstr(entry.path);
+  FindObjFileInput* const input =  (FindObjFileInput*) entry.data;
+  const size_t space_needed = sv.count + 2;
+
+  if (entry.type == NOB_FILE_REGULAR && 
+      !strncmp(entry.path + sv.count - 2, ".o", 2))
+  {
+    if (input->available_space < space_needed){
+      input->buffer = (char*) NOB_REALLOC(input->buffer, input->size + space_needed);
+      memset(input->buffer + input->size, 0, space_needed);
+      if (!input->buffer){
+        nob_log(ERROR, "realloc failed, by more ram");
+        return false;
+      }
+      input->size += space_needed;
+      input->available_space = space_needed;
+    }
+    strncat(input->buffer, sv.data, input->available_space);
+    strncat(input->buffer, " ", input->available_space);
+    input->available_space-=(space_needed);
+  }
+
+  return result;
+}
+
+
+static int _link_obj(const char* build_dir, const char* o_file)
+{
+  int result=0;
+  Cmd cmd = {0};
+  FindObjFileInput input ={
+    .p_cmd = &cmd,
+    .buffer = NULL,
+    .size = 0,
+    .available_space =0,
+    .o_file = o_file,
+  };
+
+  cmd_append(&cmd, "cc");
+  cmd_append(&cmd, "-Wall");
+  cmd_append(&cmd, "-Wextra");
+  DEBUG_MODE cmd_append(&cmd, "-fsanitize=address,undefined");
+
+  if(!walk_dir(build_dir, _find_obj_file, .data = &input)) return_defer(1);
+
+  for(char* cursor=strtok(input.buffer, " ");cursor;cursor = strtok(NULL, " "))
+  {
+    NOB_VERBOSE nob_log(INFO, "file to link: %s", cursor);
+    cmd_append(&cmd, cursor);
+  }
+
+  cmd_append(&cmd, "-o");
+  cmd_append(&cmd, o_file);
+
+  if (!cmd_run(&cmd,0)) return_defer(2);
+
+defer:
+  if(input.buffer){
+    free(input.buffer);
+    input.buffer = NULL;
+  }
+  cmd_free(cmd);
+  return result;
+}
+
+static void _parse_input(int argc, char** argv)
+{
+#define CHECK_ARG(input, arg) !strncmp(input[i], (arg), strlen((input[i])))
+
+  for (int i=0; i<argc; i++) {
+    if (CHECK_ARG(argv, "-vn") || CHECK_ARG(argv, "--nob_verbose")) {
+      nob_verbose = true;
+    }
+    if (CHECK_ARG(argv, "-vc") || CHECK_ARG(argv, "--comp_verbose")) {
+      comp_verbose= true;
+    }
+    if (CHECK_ARG(argv, "-g") || CHECK_ARG(argv, "--debug")) {
+      comp_debug_mode= true;
+    }
+
+    if (CHECK_ARG(argv, "-h") || CHECK_ARG(argv, "--help")) {
+      printf("usage ./nob <options>\n");
+      printf("\t\t-vn, --nob_verbose\tnob verbose log\n");
+      printf("\t\t-g, --debug\tcompile in debug mode\n");
+      printf("\t\t-vc, --comp_verbose\tcompilation verbose log\n");
+      printf("\t\t-h, --help\t\tprint this help\n");
+      exit(0);
+    }
+  }
+
+#undef CHECK_ARG
+}
+
+int main(int argc, char *argv[])
+{
+  GO_REBUILD_URSELF(argc, argv);
+  int err =0;
+  Cmd cmd ={0};
+
+  char src_dir[PATH_MAX] = {0};
+  char build_dir[PATH_MAX] = {0};
+
+  _parse_input(argc, argv);
+  root = get_current_dir_temp();
+
+  NOB_VERBOSE nob_log(INFO, "cleaning build dir");
+  if(!walk_dir(build_dir,_clean_dir, .post_order = true)) return err;;
+
+  snprintf(src_dir, PATH_MAX, "%s/%s", root, SRC_DIR);
+  snprintf(build_dir, PATH_MAX, "%s/%s", root, BUILD_DIR);
+
+  NOB_VERBOSE nob_log(INFO, "src dir: %s", src_dir);
+  NOB_VERBOSE nob_log(INFO, "dep root dir: %s/%s", root, DEP_ROOT);
+  NOB_VERBOSE nob_log(INFO, "build dir: %s", build_dir);
+
+
+  //building deployment
+  set_current_dir(DEP_ROOT);
+  NOB_VERBOSE nob_log(INFO, "building deployment");
+  cmd_append(&cmd,"cc");
+  cmd_append(&cmd,"nob.c");
+  cmd_append(&cmd,"-o");
+  cmd_append(&cmd,"nob");
+  if (!cmd_run(&cmd,0)) return err;
+
+  cmd_append(&cmd,"./nob");
+  for(int i=0; i<argc; i++)
+  {
+    cmd_append(&cmd,argv[i]);
+  }
+  if (!cmd_run(&cmd,0)) return err;
+  set_current_dir(root);
+
+  if(!mkdir_if_not_exists(BUILD_DIR)) return 1;
+
+  //copying CR obj in build dir
+  if(!copy_file(DEP_ROOT"/out/CR.o",BUILD_DIR"/CR.o")) return err;
+
+  //building obj
+  if(!set_current_dir(build_dir)) return 2;
+  NOB_VERBOSE nob_log(INFO, "building src objs");
+  if(!walk_dir(src_dir,_compile_files,0)) return err;;
+
+  //linking obj
+  NOB_VERBOSE nob_log(INFO, "linking objs");
+  if((err = _link_obj(build_dir, O_FILE))) return(err);
+
+  //copying executable
+  if(!set_current_dir(root)) return(2);
+  if(!copy_file(BUILD_DIR"/"O_FILE, O_FILE)) return(4);
+
+  return err;
+}
