@@ -6,7 +6,7 @@ This cores can be anything from system level thread to real cpu core.
 Each core independently chooses which tasks to run among the one which has been assigned to it.
 The library is implemented in **C11**, and it does not depend on any external library not even 
 on **glibc**.
-Also a **HAL** has been designed to facilitate the porting on different platform.
+Also a **HAL** has been designed to facilitate the porting on different platforms.
 Thanks to all of these the library if completely **freestanding** using **C11**.
 
 > [!IMPORTANT]
