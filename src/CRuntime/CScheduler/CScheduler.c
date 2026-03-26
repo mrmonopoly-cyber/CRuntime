@@ -1,4 +1,5 @@
 #include "CScheduler.h"
+#include "CRuntime/common/HAL/debug.h"
 #include "CRuntime/common/utils/utils.h"
 
 #include <assert.h>
@@ -9,24 +10,8 @@
 #define CHECK_CS_INPUT(cs) \
   if (!cs) return ERR(CR_STATUS_ERR_INVALID_INPUT, "CS_init: cs ptr is null")
 
-int idle_task(void* in)
-{
-  CS* self= (CS*) in;
-
-  while (self)
-  {
-    CRLog_drain_x(self->cr_ctx->logger, 1); //TODO: test best amount to drain. Need measurements
-    Context_switch(self->active_ctx, &self->ctx);
-  }
-
-  TODO("idle_task: panic");
-  while(1);
-}
-
 CRRETURN CS_init(CS* const self, const size_t worker_id, CCTX* cr_ctx)
 {
-  ContextAction action ={0};
-
   assert(self);
 
   cr_memset(self, 0, sizeof(*self));
@@ -39,23 +24,6 @@ CRRETURN CS_init(CS* const self, const size_t worker_id, CCTX* cr_ctx)
   {
     TRY(CSAQ_init(&self->world_task_queue[i]));
   }
-
-  action.arg = self;
-  action.entry = idle_task;
-
-  CRESULT_FULL_MATCH(Thread_allocate_memory(),
-      res,
-      {
-        StackView idle_stack = INIT_STACK_VIEW(res.low_addr, res.size);
-        self->idle_task_stack =res.low_addr;
-        TRY(Context_init(&self->idle_ctx, idle_stack, action));
-      },
-      {
-        UNUSED(res);
-        TODO("manage error in idle task stack allocation, for now panic");
-        while(1);
-      }
-  );
 
   self->worker_id = worker_id;
 
@@ -79,6 +47,12 @@ void _CS_manage_task(CS* const restrict self, CTask* const task)
         }
     );
 
+    if(CRESULT_IS_ERR(LOG(self->cr_ctx->logger, self->worker_id, Trace,
+          "worker: %d pushing task %s on drain queue", self->worker_id, task->name, NULL)))
+    {
+          TODO("unamanager log failure");
+    }
+
     CRESULT_ERR_MATCH(CSAQ_push_try(&self->drain_queue, task),
         err,{
           UNUSED(err);
@@ -88,55 +62,48 @@ void _CS_manage_task(CS* const restrict self, CTask* const task)
   }
 }
 
+static inline void _schedule_task(CS* const self, CTask* const task, const bool local)
+{
+    CRESULT_ERR_MATCH(LOG(
+          self->cr_ctx->logger,
+          self->worker_id,
+          Trace,
+          "worker %d: scheduling %s task type: %d task: %s",
+          self->worker_id, local ? "local" : "", task->type, task->name,
+          NULL
+          ),
+        err,
+        {
+          TODO("unamanager log failure");
+          UNUSED(err);
+        }
+    );
+    _CS_manage_task(self, task);
+}
+
 CRRETURN CS_run(CS* const restrict self)
 {
   assert(self);
+  bool found=false;
 
-  while (1)
+  while (true)
   {
     CRESULT_OK_MATCH(CSAQ_pop_try(&self->world_task_queue[TaskType_System]),
         res,{
-          CRESULT_ERR_MATCH(LOG(
-                self->cr_ctx->logger,
-                self->worker_id,
-                Trace,
-                "scheduling task type: %d task: %s", TaskType_System, ((CTask*)res)->name,
-                NULL
-                ),
-              err,
-              {
-                TODO("unamanager log failure");
-                UNUSED(err);
-              }
-          );
-          _CS_manage_task(self, res);
-          continue;
+         _schedule_task(self, res, false);
+         continue;
         }
     );
 
     if(CRLog_size(self->cr_ctx->logger) > CR_LOG_FILL_THRESHOLD)
     {
-      TODO("h");
       CRLog_drain_x(self->cr_ctx->logger, CR_LOG_FILL_THRESHOLD);
     }
 
     CRESULT_OK_MATCH(CSQ_pop_try(&self->local_queue),
         res,{
-          CRESULT_ERR_MATCH(LOG(
-                self->cr_ctx->logger,
-                self->worker_id,
-                Trace,
-                "scheduling local task: %s", ((CTask*)res)->name,
-                NULL
-                ),
-              err,
-              {
-                TODO("unmanaged log failure");
-                UNUSED(err);
-              }
-          );
-          _CS_manage_task(self, res);
-          continue;
+         _schedule_task(self, res, true);
+         continue;
         }
     );
 
@@ -144,28 +111,33 @@ CRRETURN CS_run(CS* const restrict self)
     {
       CRESULT_OK_MATCH(CSAQ_pop_try(&self->world_task_queue[t]),
           res,{
-            CRESULT_ERR_MATCH(LOG(
-                  self->cr_ctx->logger,
-                  self->worker_id,
-                  Trace,
-                  "scheduling task type: %d task: %s", t, ((CTask*)res)->name,
-                  NULL
-                  ),
-                err,
-                {
-                  TODO("unamanager log failure");
-                  UNUSED(err);
-                }
-            );
-
-            _CS_manage_task(self, res);
-            continue;
+           _schedule_task(self, res, false);
+           found = true;
+           continue;
           }
       );
     }
 
-    self->active_ctx = &self->idle_ctx;
-    Context_switch(&self->ctx, self->active_ctx);
+    if(found) continue;
+
+    CRESULT_ERR_MATCH(LOG(
+          self->cr_ctx->logger,
+          self->worker_id,
+          Trace,
+          "worker: %d scheduling idle task",
+          self->worker_id, 
+          NULL
+          ),
+        err,
+        {
+          TODO("unamanager log failure");
+          UNUSED(err);
+        }
+    );
+
+
+    //INFO: idle task
+    CRLog_drain_x(self->cr_ctx->logger, 1); //TODO: test best amount to drain. Need measurements
   }
 
   return OK();
