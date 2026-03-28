@@ -60,7 +60,7 @@ size_t cr_itoa(int value, char *sp, size_t radix)
     return len;
 }
 
-size_t cr_vsnprintf_arg(char *restrict s, size_t n, const char* fmt, va_list arg)
+size_t cr_vsnprintf_arg(char *restrict s, size_t n, const char* fmt, va_list* arg)
 {
   size_t written =0, len;
   char in_c;
@@ -81,7 +81,7 @@ size_t cr_vsnprintf_arg(char *restrict s, size_t n, const char* fmt, va_list arg
       case 'c':
         if(command && written + sizeof(char) < n)
         {
-          c = (char) va_arg(arg, int);
+          c = (char) va_arg(*arg, int);
           *(s++) = c;
           written++;
           command = false;
@@ -91,7 +91,7 @@ size_t cr_vsnprintf_arg(char *restrict s, size_t n, const char* fmt, va_list arg
       case 'd':
         if(command && written + sizeof(int) < n)
         {
-          d = va_arg(arg, int);
+          d = va_arg(*arg, int);
           len= cr_itoa(d, s, 10);
           written+=len;
           s+=len;
@@ -102,7 +102,7 @@ size_t cr_vsnprintf_arg(char *restrict s, size_t n, const char* fmt, va_list arg
       case 'u':
         if(command && written + sizeof(unsigned int) < n)
         {
-          u = va_arg(arg, unsigned int);
+          u = va_arg(*arg, unsigned int);
           len= cr_itoa(u, s, 10);
           written+=len;
           s+=len;
@@ -113,7 +113,7 @@ size_t cr_vsnprintf_arg(char *restrict s, size_t n, const char* fmt, va_list arg
       case 'x':
         if(command && written + sizeof(int) < n)
         {
-          d = va_arg(arg, int);
+          d = va_arg(*arg, int);
           len= cr_itoa(d, s, 16);
           written+=len;
           s+=len;
@@ -124,7 +124,7 @@ size_t cr_vsnprintf_arg(char *restrict s, size_t n, const char* fmt, va_list arg
       case 's':
         if(command)
         {
-          sp = va_arg(arg, char*);
+          sp = va_arg(*arg, char*);
           while(written + 1 < n && *sp)
           {
             *(s++) = *(sp++);
@@ -154,7 +154,7 @@ size_t cr_vsnprintf(char* buf, size_t size, const char* fmt, ...)
   size_t written=0;
 
   va_start(arg, fmt);
-  written = cr_vsnprintf_arg(buf, size, fmt, arg);
+  written = cr_vsnprintf_arg(buf, size, fmt, &arg);
   va_end(arg);
 
   return written;

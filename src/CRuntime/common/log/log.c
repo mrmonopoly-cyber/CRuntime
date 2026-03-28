@@ -10,7 +10,6 @@
 #ifndef NO_LOG
 
 static CRL g_default_logger;
-static atomic_flag g_draining;
 
 #ifndef MAX_STRING
 #define MAX_STRING 4096
@@ -33,23 +32,20 @@ CRReturn _CRLog_init(const CRLogOpt opt)
     LOG_FILE_NAME_EXTRA_PADDING
   };
 
-  cr_memset(self,0 ,sizeof(*self));
+  if(atomic_flag_test_and_set(&self->in_use))
+  {
+    err=ERR(CR_STATUS_ERR_DOUBLE_INIT, "log already in use");
+    goto bad;
+  }
 
   for(size_t i=0; i<num_queues; i++ )
   {
     TRY(CLAQ_init(&self->data_to_log[i].data_to_log));
   }
-
   char* cursor =
     default_log_file_path +
     (sizeof(DEFAULT_LOG_FILE_DIR_PATH) -1) +
     (sizeof(LOG_FILE_BASE_NAME) -1);
-
-  if(self->log_file || self->log_file_path)
-  {
-    err = ERR(CR_STATUS_ERR_INIT, "loggger already initialized");
-    goto bad;
-  }
 
   if(opt.log_file_path)
   {
@@ -155,7 +151,7 @@ CRRETURN _CRLog(CRL* rl,
   cursor += cr_vsnprintf(cursor, MAX_STRING, "%s.%d: ", file, line);
   
   va_start(arg, fmt);
-  cursor += cr_vsnprintf_arg(cursor, MAX_STRING, fmt, arg);
+  cursor += cr_vsnprintf_arg(cursor, MAX_STRING, fmt, &arg);
   va_end(arg);
 
   cursor += cr_vsnprintf(cursor, MAX_STRING, "\n\r", NULL);
@@ -176,7 +172,7 @@ void CRLog_drain_x(CRL* rl, const size_t log_per_queue)
   CLAQ* queue = NULL;
   const size_t num_queues = sizeof(self->data_to_log)/sizeof(self->data_to_log[0]);
 
-  if(atomic_flag_test_and_set(&g_draining))
+  if(atomic_flag_test_and_set(&self->draining))
   {
     return;
   }
@@ -209,7 +205,7 @@ void CRLog_drain_x(CRL* rl, const size_t log_per_queue)
     }
   }
 
-  atomic_flag_clear(&g_draining);
+  atomic_flag_clear(&self->draining);
 
 }
 
@@ -221,8 +217,13 @@ size_t CRLog_size(CRL* rl)
 
 CRReturn CRLog_destroy(CRL* rl)
 {
+  CRReturn res = {0};
   CRL* self = rl ? rl : &g_default_logger;
-  return CR_close_file(self->log_file);
+  res = CR_close_file(self->log_file);
+  atomic_flag_clear(&self->in_use);
+
+
+  return res;
 }
 
 #endif //!NO_LOG

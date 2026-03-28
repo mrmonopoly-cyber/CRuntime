@@ -12,7 +12,7 @@ void *cr_memset(void *s, int c, size_t n);
 
 size_t cr_strlen(const char* c_str);
 
-size_t cr_vsnprintf_arg(char *restrict s, size_t n, const char *restrict fmt, va_list arg);
+size_t cr_vsnprintf_arg(char *restrict s, size_t n, const char *restrict fmt, va_list* arg);
 size_t cr_vsnprintf(char *restrict s, size_t n, const char *restrict format, ...);
 
 size_t cr_itoa(int d, char* s, size_t radix);

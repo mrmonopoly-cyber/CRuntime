@@ -45,6 +45,8 @@ typedef struct CRLogger{
   const char* log_file_path;
   CRLWorker data_to_log[CR_MAX_NUM_OF_CORES + 1];
   size_t most_load;
+  atomic_flag draining;
+  atomic_flag in_use;
 }CRL;
 
 typedef struct{

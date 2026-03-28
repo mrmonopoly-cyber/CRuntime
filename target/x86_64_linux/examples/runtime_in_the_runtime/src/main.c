@@ -19,12 +19,17 @@ int meaning_of_life(void* input)
   }
 }
 
+
+CRL inner_logger={0};
+
 int runtime_rec(void* input)
 {
   UNUSED(input);
   CRuntime runtime = {0};
 
-  CRESULT_ERR_MATCH(CRuntime_init(&runtime, .active_cores = 1),
+  CRESULT_ERR_MATCH(CRuntime_init(&runtime,
+        .active_cores = 1,
+        .logger_init_opt.logger = &inner_logger),
       err,{
         printf("error init CRuntime: %s\n", err.description);
         return 1;
